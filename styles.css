@@ -36,17 +36,17 @@ body::before {
   z-index: -1;
   background: url('bg.jpg') center 30% / cover no-repeat;
 }
-/* 半透明罩，保证文字清晰可读 */
+/* 半透明罩：顶部渐变变透，让雪山透出来；下方加深，保证文字清晰可读 */
 body::after {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
-  background: rgba(250, 249, 247, 0.8);
+  background: linear-gradient(rgba(250, 249, 247, 0.28) 0%, rgba(250, 249, 247, 0.85) 34%);
   pointer-events: none;
 }
 html[data-theme="dark"] body::after {
-  background: rgba(22, 21, 19, 0.82);
+  background: linear-gradient(rgba(22, 21, 19, 0.28) 0%, rgba(22, 21, 19, 0.85) 34%);
 }
 
 .wrap { max-width: 760px; margin: 0 auto; padding: 0 20px; }
@@ -56,13 +56,13 @@ html[data-theme="dark"] body::after {
 .site-header {
   border-bottom: 1px solid var(--border);
   position: sticky; top: 0;
-  background: rgba(250, 249, 247, 0.72);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  background: rgba(250, 249, 247, 0.30);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   z-index: 10;
 }
 html[data-theme="dark"] .site-header {
-  background: rgba(22, 21, 19, 0.68);
+  background: rgba(22, 21, 19, 0.30);
 }
 
 .header-inner {
