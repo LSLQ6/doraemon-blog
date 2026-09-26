@@ -51,9 +51,11 @@ body {
 }
 .rainbow-text {
   font-weight: 800;
-  background: linear-gradient(90deg, #ff5f6d, #ff9f43, #feca57, #1dd1a1, #54a0ff, #a55eea);
+  background: linear-gradient(90deg, #ff5f6d, #ff9f43, #feca57, #1dd1a1, #54a0ff, #a55eea, #ff5f6d);
+  background-size: 200% auto;
   -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent; color: transparent;
+  animation: rainbow-flow 5s linear infinite;
 }
 .main-nav { display: flex; align-items: center; gap: 18px; }
 .main-nav a { color: var(--text); text-decoration: none; font-size: .95rem; }
