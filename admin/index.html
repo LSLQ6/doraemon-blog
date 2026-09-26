@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>哆啦A梦的博客</title>
+<meta name="description" content="生活、阅读与思考。把稍纵即逝的念头，整理成可以慢慢阅读的文字。">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="#" data-nav="home">哆啦A梦的博客</a>
+    <nav class="main-nav">
+      <a href="#" data-nav="home">文章</a>
+      <a href="#" data-nav="about">关于</a>
+      <a href="admin/">写文章</a>
+      <button class="icon-btn" id="searchToggle" aria-label="搜索">🔍</button>
+      <button class="icon-btn" id="themeToggle" aria-label="切换深色模式">🌙</button>
+    </nav>
+  </div>
+  <div class="wrap search-bar hidden" id="searchBar">
+    <input type="search" id="searchInput" placeholder="搜索文章标题、内容…">
+  </div>
+</header>
+
+<main class="wrap" id="app">
+  <!-- 首页 -->
+  <section id="view-home">
+    <div class="hero">
+      <h1>写下值得<br>反复读的<span class="accent">东西</span><span class="accent">。</span></h1>
+      <p class="tagline">生活、阅读与思考。把稍纵即逝的念头，整理成可以慢慢阅读的文字。</p>
+    </div>
+
+    <div class="section-head">
+      <h2>最新文章</h2>
+      <div class="cats" id="catFilters"></div>
+    </div>
+    <div id="postList" class="post-list"></div>
+    <p class="empty hidden" id="emptyMsg">没有找到相关文章，换个关键词试试。</p>
+  </section>
+
+  <!-- 文章页 -->
+  <section id="view-post" class="hidden">
+    <a href="#" class="back" data-nav="home">← 返回文章列表</a>
+    <article class="post-full">
+      <p class="post-meta" id="postMeta"></p>
+      <h1 id="postTitle"></h1>
+      <div class="post-body" id="postBody"></div>
+    </article>
+  </section>
+
+  <!-- 关于页 -->
+  <section id="view-about" class="hidden">
+    <h1>关于</h1>
+    <div class="post-body">
+      <p>你好，这里是哆啦A梦的博客。</p>
+      <p>这是一个记录生活、阅读与思考的地方。把稍纵即逝的念头，整理成可以慢慢阅读的文字。</p>
+      <p>（这段介绍是示例，换成你自己的介绍吧。）</p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© <span id="year"></span> 哆啦A梦的博客 · 用心写字，慢慢生活</p>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
