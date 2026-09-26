@@ -16,16 +16,41 @@ html[data-theme="dark"] {
   --card: #201e1b;
   --border: #35322c;
 }
+
 * { box-sizing: border-box; }
+
 body {
   margin: 0;
-  background: var(--bg);
+  background: transparent;
   color: var(--text);
   font-family: "Songti SC", "Noto Serif SC", "STSong", serif;
   line-height: 1.8;
   transition: background .25s, color .25s;
 }
+
+/* 全屏固定雪山背景图 */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: url('bg.jpg') center 30% / cover no-repeat;
+}
+/* 半透明罩，保证文字清晰可读 */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: rgba(250, 249, 247, 0.8);
+  pointer-events: none;
+}
+html[data-theme="dark"] body::after {
+  background: rgba(22, 21, 19, 0.82);
+}
+
 .wrap { max-width: 760px; margin: 0 auto; padding: 0 20px; }
+
 .hidden { display: none !important; }
 
 .site-header {
@@ -34,10 +59,12 @@ body {
   background: var(--bg);
   z-index: 10;
 }
+
 .header-inner {
   display: flex; flex-direction: column; align-items: center;
   padding: 14px 20px 10px; gap: 6px;
 }
+
 .brand {
   font-weight: 800; font-size: 1.7rem; text-decoration: none;
   background: linear-gradient(90deg, #ff5f6d, #ff9f43, #feca57, #1dd1a1, #54a0ff, #a55eea, #ff5f6d);
@@ -46,9 +73,11 @@ body {
   -webkit-text-fill-color: transparent; color: transparent;
   animation: rainbow-flow 5s linear infinite;
 }
+
 @keyframes rainbow-flow {
   to { background-position: 200% center; }
 }
+
 .rainbow-text {
   font-weight: 800;
   background: linear-gradient(90deg, #ff5f6d, #ff9f43, #feca57, #1dd1a1, #54a0ff, #a55eea, #ff5f6d);
@@ -57,14 +86,20 @@ body {
   -webkit-text-fill-color: transparent; color: transparent;
   animation: rainbow-flow 5s linear infinite;
 }
+
 .main-nav { display: flex; align-items: center; gap: 18px; }
+
 .main-nav a { color: var(--text); text-decoration: none; font-size: .95rem; }
+
 .main-nav a:hover { color: var(--accent); }
+
 .icon-btn {
   background: none; border: none; cursor: pointer;
   font-size: 1.1rem; padding: 4px;
 }
+
 .search-bar { padding: 10px 20px 14px; }
+
 .search-bar input {
   width: 100%; padding: 10px 14px; font-size: 1rem;
   border: 1px solid var(--border); border-radius: 8px;
@@ -76,32 +111,49 @@ body {
   border-top: 2px solid var(--text);
   padding-top: 18px; margin-top: 10px; flex-wrap: wrap; gap: 10px;
 }
+
 .section-head h2 { margin: 0; font-size: 1.6rem; }
+
 .cats { display: flex; gap: 8px; flex-wrap: wrap; }
+
 .cat-btn {
   border: 1px solid var(--border); background: var(--card); color: var(--text);
   border-radius: 999px; padding: 4px 14px; cursor: pointer; font-size: .85rem;
 }
+
 .cat-btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
 
 .post-list { margin: 8px 0 40px; }
+
 .post-card {
   display: block; padding: 22px 0; border-bottom: 1px solid var(--border);
   text-decoration: none; color: inherit; cursor: pointer;
 }
+
 .post-card:hover .post-card-title { color: var(--accent); }
+
 .post-card-cat { color: var(--link); font-size: .85rem; margin: 0 0 8px; }
+
 .post-card-title { font-size: 1.45rem; margin: 0 0 8px; line-height: 1.5; }
+
 .post-card-excerpt { color: var(--muted); margin: 0 0 6px; font-size: .95rem; }
+
 .post-card-date { color: var(--muted); font-size: .82rem; margin: 0; }
+
 .empty { color: var(--muted); padding: 30px 0; }
 
 .back { color: var(--link); text-decoration: none; font-size: .9rem; }
+
 .post-full { padding: 24px 0 50px; }
+
 .post-meta { color: var(--link); font-size: .9rem; margin: 0 0 10px; }
+
 .post-full h1 { font-size: clamp(1.8rem, 6vw, 2.6rem); line-height: 1.4; margin: 0 0 26px; }
+
 .post-body { font-size: 1.06rem; }
+
 .post-body p { margin: 0 0 1.2em; }
+
 .post-body .demo-note {
   border-left: 3px solid var(--accent);
   background: var(--card);
@@ -109,6 +161,7 @@ body {
 }
 
 #view-about h1 { font-size: 2.2rem; margin: 40px 0 20px; }
+
 #view-about { padding-bottom: 60px; }
 
 .site-footer {
@@ -116,5 +169,7 @@ body {
   padding: 26px 0; color: var(--muted); font-size: .85rem;
   text-align: center;
 }
+
 .site-footer p { margin: 0; }
+
 .footer-line { font-size: 1.05rem; }
