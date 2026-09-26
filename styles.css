@@ -57,17 +57,13 @@ body {
 }
 
 .hero { padding: 56px 0 36px; }
-.hero-with-cover { display: flex; gap: 40px; align-items: center; }
-.hero-text { flex: 1; min-width: 0; }
+.hero-cover-only { display: flex; justify-content: center; padding: 48px 0 32px; }
+.hero-cover-only .hero-cover { width: min(78vw, 340px); }
 .hero-cover {
-  width: 290px; aspect-ratio: 3 / 4; object-fit: cover;
+  aspect-ratio: 3 / 4; object-fit: cover;
   border-radius: 18px; border: 1px solid var(--border);
   box-shadow: 0 14px 36px rgba(0, 0, 0, .14);
   flex-shrink: 0; background: var(--card);
-}
-@media (max-width: 640px) {
-  .hero-with-cover { flex-direction: column; gap: 28px; }
-  .hero-cover { width: min(76vw, 290px); }
 }
 .hero h1 {
   font-size: clamp(2.6rem, 9vw, 4.2rem);

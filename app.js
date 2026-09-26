@@ -22,6 +22,7 @@ function categories() {
 
 function renderCats() {
   const box = document.getElementById("catFilters");
+  if (!box) return;
   box.innerHTML = "";
   categories().forEach(c => {
     const b = document.createElement("button");
