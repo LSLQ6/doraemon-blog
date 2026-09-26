@@ -3,70 +3,162 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>哆啦A梦的博客</title>
-<meta name="description" content="生活、阅读与思考。把稍纵即逝的念头，整理成可以慢慢阅读的文字。">
-<link rel="stylesheet" href="styles.css">
+<title>写文章 · 哆啦A梦的博客</title>
+<style>
+  :root { --bg:#faf9f7; --text:#1a1a1a; --muted:#6b6b6b; --accent:#e2482e; --card:#fff; --border:#e5e2dc; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; line-height:1.7; }
+  .wrap { max-width:720px; margin:0 auto; padding:24px 20px 60px; }
+  h1 { font-size:1.7rem; margin:0 0 6px; }
+  .sub { color:var(--muted); font-size:.92rem; margin:0 0 24px; }
+  .sub a { color:#1d5fa8; }
+  label { display:block; font-weight:600; margin:18px 0 6px; font-size:.95rem; }
+  input[type=text], input[type=password], input[type=date], textarea {
+    width:100%; padding:10px 12px; font-size:1rem; border:1px solid var(--border);
+    border-radius:8px; background:var(--card); color:var(--text); font-family:inherit; }
+  textarea { min-height:260px; resize:vertical; line-height:1.8; }
+  .hint { color:var(--muted); font-size:.83rem; margin:6px 0 0; }
+  .row { display:flex; gap:12px; }
+  .row > div { flex:1; }
+  button.publish {
+    margin-top:24px; width:100%; padding:14px; font-size:1.05rem; font-weight:700;
+    color:#fff; background:var(--accent); border:none; border-radius:10px; cursor:pointer; }
+  button.publish:disabled { opacity:.55; cursor:wait; }
+  #status { margin-top:16px; padding:12px 16px; border-radius:8px; font-size:.92rem; display:none; }
+  #status.ok { display:block; background:#e8f5e9; color:#2e7d32; }
+  #status.err { display:block; background:#fdecea; color:#b3261e; }
+  #status.info { display:block; background:#e8f0fe; color:#1a56db; }
+  .back { display:inline-block; margin-bottom:8px; color:#1d5fa8; text-decoration:none; font-size:.9rem; }
+  details { margin-top:26px; border:1px solid var(--border); border-radius:8px; padding:12px 16px; background:var(--card); }
+  details summary { cursor:pointer; font-weight:600; }
+  details ol { margin:10px 0 4px; padding-left:20px; font-size:.9rem; color:var(--muted); }
+  details code { background:#f0eeea; padding:1px 6px; border-radius:4px; font-size:.85em; }
+</style>
 </head>
 <body>
-<header class="site-header">
-  <div class="wrap header-inner">
-    <a class="brand" href="#" data-nav="home">哆啦A梦的博客</a>
-    <nav class="main-nav">
-      <a href="#" data-nav="home">文章</a>
-      <a href="#" data-nav="about">关于</a>
-      <a href="admin/">写文章</a>
-      <button class="icon-btn" id="searchToggle" aria-label="搜索">🔍</button>
-      <button class="icon-btn" id="themeToggle" aria-label="切换深色模式">🌙</button>
-    </nav>
-  </div>
-  <div class="wrap search-bar hidden" id="searchBar">
-    <input type="search" id="searchInput" placeholder="搜索文章标题、内容…">
-  </div>
-</header>
+<div class="wrap">
+  <a class="back" href="../">← 返回博客首页</a>
+  <h1>写文章</h1>
+  <p class="sub">写完点发布，文章会自动同步到你的 GitHub 仓库，几分钟后博客上就能看到。</p>
 
-<main class="wrap" id="app">
-  <!-- 首页 -->
-  <section id="view-home">
-    <div class="hero">
-      <h1>写下值得<br>反复读的<span class="accent">东西</span><span class="accent">。</span></h1>
-      <p class="tagline">生活、阅读与思考。把稍纵即逝的念头，整理成可以慢慢阅读的文字。</p>
+  <label>GitHub 访问令牌</label>
+  <input type="password" id="token" placeholder="粘贴你的 token（只保存在本浏览器，不会上传到别处）">
+  <p class="hint">发布需要一个有仓库写权限的 token，只在本页面使用，关闭页面即清除。获取方法见下方说明。</p>
+
+  <label>标题</label>
+  <input type="text" id="title" placeholder="给文章起个标题">
+
+  <div class="row">
+    <div>
+      <label>分类</label>
+      <input type="text" id="category" list="cats" placeholder="如：生活">
+      <datalist id="cats">
+        <option value="生活"><option value="阅读"><option value="思考"><option value="技术">
+      </datalist>
     </div>
-
-    <div class="section-head">
-      <h2>最新文章</h2>
-      <div class="cats" id="catFilters"></div>
+    <div>
+      <label>日期</label>
+      <input type="date" id="date">
     </div>
-    <div id="postList" class="post-list"></div>
-    <p class="empty hidden" id="emptyMsg">没有找到相关文章，换个关键词试试。</p>
-  </section>
-
-  <!-- 文章页 -->
-  <section id="view-post" class="hidden">
-    <a href="#" class="back" data-nav="home">← 返回文章列表</a>
-    <article class="post-full">
-      <p class="post-meta" id="postMeta"></p>
-      <h1 id="postTitle"></h1>
-      <div class="post-body" id="postBody"></div>
-    </article>
-  </section>
-
-  <!-- 关于页 -->
-  <section id="view-about" class="hidden">
-    <h1>关于</h1>
-    <div class="post-body">
-      <p>你好，这里是哆啦A梦的博客。</p>
-      <p>这是一个记录生活、阅读与思考的地方。把稍纵即逝的念头，整理成可以慢慢阅读的文字。</p>
-      <p>（这段介绍是示例，换成你自己的介绍吧。）</p>
-    </div>
-  </section>
-</main>
-
-<footer class="site-footer">
-  <div class="wrap">
-    <p>© <span id="year"></span> 哆啦A梦的博客 · 用心写字，慢慢生活</p>
   </div>
-</footer>
 
-<script src="app.js"></script>
+  <label>摘要（一句话）</label>
+  <input type="text" id="excerpt" placeholder="会显示在首页列表里">
+
+  <label>正文（支持 Markdown）</label>
+  <textarea id="body" placeholder="在这里写正文……&#10;&#10;空行分段，# 是标题，- 开头是列表，**文字** 加粗"></textarea>
+
+  <button class="publish" id="publishBtn">发布文章</button>
+  <div id="status"></div>
+
+  <details>
+    <summary>如何获取访问令牌（只需做一次）</summary>
+    <ol>
+      <li>打开 GitHub → 右上角头像 → <code>Settings</code></li>
+      <li>左下角 <code>Developer settings</code> → <code>Personal access tokens</code> → <code>Fine-grained tokens</code></li>
+      <li>点击 <code>Generate new token</code>，Repository access 选 <code>Only select repositories</code>，勾选 <code>doraemon-blog</code></li>
+      <li>Permissions 里找到 <code>Contents</code>，设为 <code>Read and write</code>，然后生成</li>
+      <li>把生成的 token 复制，粘贴到本页上方的输入框即可</li>
+    </ol>
+  </details>
+</div>
+
+<script>
+const OWNER = "LSLQ6", REPO = "doraemon-blog", BRANCH = "main";
+const $ = id => document.getElementById(id);
+document.getElementById("date").value = new Date().toISOString().slice(0, 10);
+
+function setStatus(msg, kind) {
+  const el = $("status");
+  el.textContent = msg;
+  el.className = kind;
+}
+const b64 = s => btoa(String.fromCharCode(...new TextEncoder().encode(s)));
+
+async function gh(path, token, method, body) {
+  const res = await fetch("https://api.github.com/repos/" + OWNER + "/" + REPO + "/contents/" + path, {
+    method: method || "GET",
+    headers: {
+      "Authorization": "Bearer " + token,
+      "Accept": "application/vnd.github+json",
+      "Content-Type": "application/json"
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error("GitHub 返回 " + res.status + "：" + t.slice(0, 200));
+  }
+  return res.json();
+}
+
+$("publishBtn").onclick = async () => {
+  const token = $("token").value.trim();
+  const title = $("title").value.trim();
+  const category = $("category").value.trim() || "生活";
+  const date = $("date").value || new Date().toISOString().slice(0, 10);
+  const excerpt = $("excerpt").value.trim();
+  const body = $("body").value.trim();
+  if (!token) return setStatus("请先填写 GitHub 访问令牌。", "err");
+  if (!title || !body) return setStatus("标题和正文不能为空。", "err");
+
+  const btn = $("publishBtn");
+  btn.disabled = true;
+  try {
+    setStatus("正在发布…", "info");
+    const file = date + "-" + Date.now().toString(36) + ".md";
+    const md = "---\ntitle: " + title.replace(/\n/g, " ") +
+      "\ndate: " + date + "\ncategory: " + category.replace(/\n/g, " ") +
+      "\nexcerpt: " + excerpt.replace(/\n/g, " ") + "\n---\n\n" + body + "\n";
+
+    await gh("posts/" + file, token, "PUT", {
+      message: "发布文章：" + title,
+      content: b64(md),
+      branch: BRANCH
+    });
+
+    const idx = await gh("posts.json", token);
+    const list = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(idx.content.replace(/\n/g, "")), c => c.charCodeAt(0))));
+    list.unshift({ file, title, date, category, excerpt });
+    await gh("posts.json", token, "PUT", {
+      message: "更新文章索引",
+      content: b64(JSON.stringify(list)),
+      sha: idx.sha,
+      branch: BRANCH
+    });
+
+    setStatus("发布成功！几分钟后在博客首页就能看到这篇文章。", "ok");
+    $("title").value = ""; $("excerpt").value = ""; $("body").value = "";
+  } catch (e) {
+    setStatus("发布失败：" + e.message, "err");
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+// 关闭页面时清除 token，不长期保存
+window.addEventListener("beforeunload", () => { $("token").value = ""; });
+</script>
 </body>
 </html>
