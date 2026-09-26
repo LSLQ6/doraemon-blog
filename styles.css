@@ -56,8 +56,13 @@ html[data-theme="dark"] body::after {
 .site-header {
   border-bottom: 1px solid var(--border);
   position: sticky; top: 0;
-  background: var(--bg);
+  background: rgba(250, 249, 247, 0.72);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   z-index: 10;
+}
+html[data-theme="dark"] .site-header {
+  background: rgba(22, 21, 19, 0.68);
 }
 
 .header-inner {
