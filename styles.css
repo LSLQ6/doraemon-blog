@@ -1,8 +1,3 @@
-
-
-
-
-
 :root {
   --bg: #faf9f7;
   --text: #1a1a1a;
@@ -44,8 +39,16 @@ body {
   padding: 14px 20px 10px; gap: 6px;
 }
 .brand {
-  font-weight: 700; font-size: 1.1rem; color: var(--text);
-  text-decoration: none;
+  font-weight: 800; font-size: 1.7rem; text-decoration: none;
+  background: linear-gradient(90deg, #ff5f6d, #ff9f43, #feca57, #1dd1a1, #54a0ff, #a55eea);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+.rainbow-text {
+  font-weight: 800;
+  background: linear-gradient(90deg, #ff5f6d, #ff9f43, #feca57, #1dd1a1, #54a0ff, #a55eea);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
 }
 .main-nav { display: flex; align-items: center; gap: 18px; }
 .main-nav a { color: var(--text); text-decoration: none; font-size: .95rem; }
@@ -104,5 +107,7 @@ body {
 .site-footer {
   border-top: 1px solid var(--border);
   padding: 26px 0; color: var(--muted); font-size: .85rem;
+  text-align: center;
 }
 .site-footer p { margin: 0; }
+.footer-line { font-size: 1.05rem; }
