@@ -127,6 +127,7 @@ async function openPost(p) {
   show("post");
   try {
     const res = await fetch("posts/" + p.file);
+    if (!res.ok) throw new Error("HTTP " + res.status);
     const text = await res.text();
     const { body } = parseFrontmatter(text);
     bodyEl.innerHTML =
