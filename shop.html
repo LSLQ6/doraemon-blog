@@ -219,8 +219,8 @@ document.getElementById("authPwd").addEventListener("keydown", function(e){ if(e
 async function refreshAuth(){
   if(!sb) return;
   try{
-    var r = await sb.auth.getSession();
-    myUser = (r.data && r.data.session) ? r.data.session.user : null;
+    var r = await sb.auth.getUser();
+    myUser = (r.data && r.data.user) ? r.data.user : null;
   }catch(e){ myUser = null; }
   renderAuthArea();
 }
@@ -301,8 +301,20 @@ function startOrder(p){
 function setStatus(html){ document.getElementById("payStatus").innerHTML=html; }
 function chooseNet(key,p){
   if(!myUser){ pendingNet = { key:key, p:p }; openAuth("进入付款需要先登录 / 注册，浏览商品不用登录。"); return; }
-  var dbIdP = sb.from("orders").insert({ user_id: myUser.id, product_id: p.id, product_name: p.name, price: p.price, chain: key, status: "unpaid" }).select("id").then(function(r){ return (r.data && r.data[0]) ? r.data[0].id : null; }).catch(function(){ return null; });
-  dbIdP.then(function(dbId){ startPayPanel(key, p, dbId); });
+  sb.from("orders").insert({ user_id: myUser.id, product_id: p.id, product_name: p.name, price: p.price, chain: key, status: "unpaid" }).select("id").then(function(r){
+    if(r.error) throw r.error;
+    startPayPanel(key, p, (r.data && r.data[0]) ? r.data[0].id : null);
+  }).catch(function(e){
+    var msg = String((e && e.message) || e || "未知错误");
+    if(/jwt|expired|unauthorized|401|invalid token|auth/i.test(msg)){
+      myUser = null; renderAuthArea();
+      pendingNet = { key:key, p:p };
+      openAuth("登录已过期，请重新登录后再试。");
+    } else {
+      alert("创建待支付订单失败：" + msg);
+      startPayPanel(key, p, null);
+    }
+  });
 }
 function startPayPanel(key,p,dbId){
   stopOrder();
