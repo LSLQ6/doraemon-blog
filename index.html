@@ -11,10 +11,9 @@
 <body>
 <header class="site-header">
   <div class="wrap header-inner">
-    <span class="brand-row"><img src="logo.png" class="brand-logo" alt=""><a class="brand" href="#" data-nav="home">祁萧远的博客</a></span>
+    <span class="brand-row"><img src="logo.png" class="brand-logo" alt="" id="logoGate" style="user-select:none;-webkit-user-select:none;"><a class="brand" href="#" data-nav="home">祁萧远的博客</a></span>
     <nav class="main-nav">
       <a href="#" data-nav="home">文章</a> <a href="shop.html">购物</a>
-            <a href="admin/" class="pen-link" aria-label="写文章">🖊️</a>
       <button class="icon-btn" id="searchToggle" aria-label="搜索">🔍</button>
       <button class="icon-btn" id="themeToggle" aria-label="切换深色模式">🌙</button>
     </nav>
@@ -62,5 +61,42 @@
 </footer>
 
 <script src="app.js"></script>
+<div id="gateModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999;">
+  <div style="background:#fff;border-radius:14px;padding:26px 24px;width:300px;text-align:center;color:#1a1a1a;">
+    <p style="margin:0 0 12px;font-weight:700;">请输入后台密码</p>
+    <input type="password" id="gatePwd" placeholder="密码" style="width:100%;padding:10px 12px;font-size:1rem;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;" autocomplete="off">
+    <p id="gateErr" style="display:none;color:#b3261e;font-size:.85rem;margin:8px 0 0;">密码不对，再试试</p>
+    <div style="display:flex;gap:10px;margin-top:14px;">
+      <button id="gateCancel" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;">取消</button>
+      <button id="gateOk" style="flex:1;padding:10px;border:none;border-radius:8px;background:#1a1a1a;color:#fff;font-weight:700;cursor:pointer;">进入</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var PWD = "qixiaoyuan"; // 后台入口密码，想换找哆啦A梦改
+  var logo = document.getElementById("logoGate");
+  var modal = document.getElementById("gateModal");
+  var input = document.getElementById("gatePwd");
+  var err = document.getElementById("gateErr");
+  var clicks = 0, timer = null;
+  function openGate(){ err.style.display="none"; input.value=""; modal.classList.remove("hidden"); setTimeout(function(){ input.focus(); },50); }
+  function closeGate(){ modal.classList.add("hidden"); }
+  function tryEnter(){
+    if(input.value === PWD){ location.href = "admin/"; }
+    else { err.style.display="block"; input.value=""; input.focus(); }
+  }
+  logo.addEventListener("click", function(){
+    clicks++;
+    if(clicks >= 3){ clicks = 0; clearTimeout(timer); openGate(); return; }
+    clearTimeout(timer);
+    timer = setTimeout(function(){ clicks = 0; }, 700);
+  });
+  document.getElementById("gateOk").onclick = tryEnter;
+  document.getElementById("gateCancel").onclick = closeGate;
+  input.addEventListener("keydown", function(e){ if(e.key === "Enter") tryEnter(); });
+  modal.addEventListener("click", function(e){ if(e.target === modal) closeGate(); });
+})();
+</script>
 </body>
 </html>
