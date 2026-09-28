@@ -38,6 +38,20 @@
 .pm-btn:hover { border-color:var(--accent); }
 .pm-btn svg { flex-shrink:0; }
 .pm-emoji { font-size:1.5rem; width:30px; text-align:center; flex-shrink:0; }
+.ptype-tag { display:inline-block; font-size:.68rem; font-weight:600; border:1px solid var(--border); border-radius:20px; padding:1px 8px; margin-left:8px; color:var(--muted); vertical-align:middle; }
+.addr-form { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px; margin:12px 0; max-width:420px; }
+.addr-form h4 { margin:0 0 10px; font-size:.95rem; }
+.addr-form input, .addr-form textarea { width:100%; box-sizing:border-box; padding:9px 10px; margin:0 0 8px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text); font-size:.9rem; }
+.addr-form .row2 { display:flex; gap:8px; }
+.addr-form .row2 input { margin-bottom:8px; }
+.ship-box { background:var(--card); border:1px solid var(--border); border-left:4px solid #1d9e6c; border-radius:8px; padding:10px 12px; margin-top:10px; font-size:.85rem; }
+.ship-box .sh-title { font-weight:700; margin-bottom:6px; }
+.ship-box pre { white-space:pre-wrap; word-break:break-all; background:var(--bg); border:1px dashed var(--border); border-radius:6px; padding:8px; margin:6px 0 0; font-size:.85rem; font-family:inherit; }
+.track-tl { margin:8px 0 0; padding:0; list-style:none; }
+.track-tl li { position:relative; padding:0 0 10px 18px; font-size:.82rem; border-left:2px solid var(--border); margin-left:5px; }
+.track-tl li:last-child { padding-bottom:0; }
+.track-tl li::before { content:""; position:absolute; left:-5px; top:4px; width:8px; height:8px; border-radius:50%; background:#1d9e6c; }
+.track-tl .tt { color:var(--muted); font-size:.75rem; }
 .pay-panel { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:22px; margin:16px 0; text-align:center; }
 .pay-addr { word-break:break-all; font-size:.85rem; color:var(--muted); background:var(--bg); border:1px dashed var(--border); border-radius:8px; padding:10px; margin:12px 0; }
 .copy-btn, .check-btn { border:1px solid var(--border); background:var(--text); color:var(--bg); border-radius:999px; padding:8px 22px; cursor:pointer; font-size:.9rem; margin:4px; }
@@ -282,7 +296,7 @@ async function refreshAuth(){
   renderAuthArea();
 }
 function checkHashOrders(){ if(location.hash === "#myorders" && myUser){ stopOrder(); stopStatus(); loadMyOrders(); show("view-myorders"); } }
-if(sb){ sb.auth.onAuthStateChange(function(){ refreshAuth().then(function(){ if(myUser && pendingNet){ var n = pendingNet; pendingNet = null; closeAuth(); chooseNet(n.key, n.p); } checkHashOrders(); }); }); refreshAuth().then(checkHashOrders); }
+if(sb){ sb.auth.onAuthStateChange(function(){ refreshAuth().then(function(){ if(myUser && pendingNet){ var n = pendingNet; pendingNet = null; closeAuth(); chooseNet(n.key, n.p, n.addr); } checkHashOrders(); }); }); refreshAuth().then(checkHashOrders); }
 /* ===== 搜索 & 主题 ===== */
 document.getElementById("searchToggle").onclick = function(){
   var bar = document.getElementById("searchBar");
@@ -334,6 +348,8 @@ function imgHtml(p){
   for(var j=0;j<imgs.length;j++){ s += '<span class="'+(j===0?'on':'')+'"></span>'; }
   return s + '</div>';
 }
+function ptypeOf(p){ return (p && p.ptype === "physical") ? "physical" : "virtual"; }
+function ptypeLabel(p){ return ptypeOf(p) === "physical" ? "实物" : "虚拟"; }
 function render(){
   var g = document.getElementById("productGrid"); g.innerHTML="";
   var list = PRODUCTS;
@@ -344,6 +360,8 @@ function render(){
     var div=document.createElement("div"); div.className="product";
     div.innerHTML = imgHtml(p) + '<div class="info"><p class="nm"></p><p class="ds"></p><p class="pr"></p><p class="sold"></p><p class="stk none"></p><button class="buy-btn">购买</button></div>';
     div.querySelector(".nm").textContent=p.name;
+    var ptag = document.createElement("span"); ptag.className = "ptype-tag"; ptag.textContent = ptypeLabel(p);
+    div.querySelector(".nm").appendChild(ptag);
     div.querySelector(".ds").textContent=p.desc||"";
     div.querySelector(".pr").textContent=fmtPrice(p.price);
     div.querySelector(".sold").textContent="已售出 "+(SOLD[p.id]||0)+" 件";
@@ -429,6 +447,13 @@ function openPayMethods(p){
   var t = document.createElement("p"); t.style.cssText = "margin:0 0 4px;font-weight:700;font-size:1.05rem;"; t.textContent = p.name;
   var pr = document.createElement("p"); pr.style.cssText = "margin:0 0 14px;font-weight:800;font-size:1.15rem;color:var(--text);"; pr.textContent = fmtPrice(p.price);
   box.appendChild(t); box.appendChild(pr);
+  if(ptypeOf(p) === "physical"){
+    var af = document.createElement("div"); af.className = "addr-form";
+    af.innerHTML = '<h4>📦 实物商品，请填写收货地址</h4>' +
+      '<div class="row2"><input id="pmAddrName" placeholder="收货人姓名" maxlength="20" style="flex:1"><input id="pmAddrPhone" placeholder="手机号码" maxlength="15" inputmode="tel" style="flex:1"></div>' +
+      '<textarea id="pmAddrDetail" placeholder="详细地址：省市区 + 街道门牌号" rows="2" maxlength="200"></textarea>';
+    box.appendChild(af);
+  }
   box.appendChild(pmTitle("选择支付方式"));
   var b1 = pmBtn(ICON_USDT, "USDT支付");
   b1.onclick = function(){ showPayNets(p); };
@@ -438,6 +463,18 @@ function openPayMethods(p){
   box.appendChild(pmBack("取消", closePayMethods));
   document.getElementById("payMethodModal").classList.remove("hidden");
 }
+/* 实物商品：从付款方式弹窗读取并校验收货地址；虚拟商品返回 null；校验失败返回 false */
+function readPmAddr(p){
+  if(ptypeOf(p) !== "physical") return null;
+  var name = (document.getElementById("pmAddrName") || {}).value || "";
+  var phone = (document.getElementById("pmAddrPhone") || {}).value || "";
+  var detail = (document.getElementById("pmAddrDetail") || {}).value || "";
+  name = name.trim(); phone = phone.trim(); detail = detail.trim();
+  if(!name){ alert("请填写收货人姓名。"); return false; }
+  if(!/^1\d{10}$/.test(phone)){ alert("请填写正确的 11 位手机号码。"); return false; }
+  if(detail.length < 5){ alert("请填写完整的收货地址。"); return false; }
+  return { name: name, phone: phone, detail: detail };
+}
 function showPayNets(p){
   var box = document.getElementById("payMethodBox");
   box.innerHTML = "";
@@ -445,7 +482,7 @@ function showPayNets(p){
   NET_ORDER.forEach(function(key){
     var net = NETS[key];
     var b = pmBtn('<img src="'+NET_ICON[key]+'" width="30" height="30" style="border-radius:50%;flex-shrink:0;display:block" alt="">', net.label);
-    b.onclick = (function(k){ return function(){ closePayMethods(); showOrderView(p); chooseNet(k, p); }; })(key);
+    b.onclick = (function(k){ return function(){ var addr = readPmAddr(p); if(addr === false) return; closePayMethods(); showOrderView(p); chooseNet(k, p, addr); }; })(key);
     box.appendChild(b);
   });
   box.appendChild(pmBack("← 返回", function(){ openPayMethods(p); }));
@@ -460,11 +497,30 @@ function showComingSoon(){
 }
 function closePayMethods(){ document.getElementById("payMethodModal").classList.add("hidden"); }
 document.getElementById("payMethodModal").addEventListener("click", function(e){ if(e.target && e.target.id === "payMethodModal") closePayMethods(); });
-function showOrderView(p){
+function showOrderView(p, needAddr, orderId){
   var s = document.getElementById("orderSummary");
   s.innerHTML = '<div class="product" style="max-width:420px"><div class="info"><p class="nm"></p><p class="pr"></p></div></div>';
   s.querySelector(".nm").textContent = p.name;
   s.querySelector(".pr").textContent = fmtPrice(p.price);
+  if(needAddr){
+    var af = document.createElement("div"); af.className = "addr-form";
+    af.innerHTML = '<h4>📦 请补充收货地址（发货需要）</h4>' +
+      '<div class="row2"><input id="rsAddrName" placeholder="收货人姓名" maxlength="20" style="flex:1"><input id="rsAddrPhone" placeholder="手机号码" maxlength="15" inputmode="tel" style="flex:1"></div>' +
+      '<textarea id="rsAddrDetail" placeholder="详细地址：省市区 + 街道门牌号" rows="2" maxlength="200"></textarea>' +
+      '<button class="check-btn" id="rsAddrSave" style="font-size:.85rem;padding:8px 20px;">保存收货地址</button>';
+    s.appendChild(af);
+    document.getElementById("rsAddrSave").onclick = function(){
+      var a = { name: document.getElementById("rsAddrName").value.trim(), phone: document.getElementById("rsAddrPhone").value.trim(), detail: document.getElementById("rsAddrDetail").value.trim() };
+      if(!a.name){ alert("请填写收货人姓名。"); return; }
+      if(!/^1\d{10}$/.test(a.phone)){ alert("请填写正确的 11 位手机号码。"); return; }
+      if(a.detail.length < 5){ alert("请填写完整的收货地址。"); return; }
+      var btn = this; btn.disabled = true;
+      sb.from("orders").update({ address: a }).eq("id", orderId).then(function(r){
+        if(r.error) throw r.error;
+        btn.textContent = "已保存 ✓"; btn.disabled = true;
+      }).catch(function(e){ alert("保存失败：" + (e.message || e)); btn.disabled = false; });
+    };
+  }
   document.getElementById("payPanel").classList.add("hidden");
   show("view-order");
 }
@@ -474,11 +530,16 @@ function startOrder(p){
   openPayMethods(p);
 }
 function setStatus(html){ document.getElementById("payStatus").innerHTML=html; }
-function chooseNet(key,p){
-  if(!myUser){ pendingNet = { key:key, p:p }; openAuth("进入付款需要先登录 / 注册，浏览商品不用登录。"); return; }
+function chooseNet(key,p,addr){
+  if(!myUser){ pendingNet = { key:key, p:p, addr:addr }; openAuth("进入付款需要先登录 / 注册，浏览商品不用登录。"); return; }
   sb.from("orders").insert({ user_id: myUser.id, product_id: p.id, product_name: p.name, price: p.price, chain: key, status: "unpaid" }).select("id").then(function(r){
     if(r.error) throw r.error;
-    startPayPanel(key, p, (r.data && r.data[0]) ? r.data[0].id : null);
+    var newId = (r.data && r.data[0]) ? r.data[0].id : null;
+    if(newId && addr){
+      /* 地址单独更新：即使数据库还没加 address 列也不会影响下单 */
+      sb.from("orders").update({ address: addr }).eq("id", newId).then(function(){}, function(){});
+    }
+    startPayPanel(key, p, newId);
   }).catch(function(e){
     var msg = String((e && e.message) || e || "未知错误");
     if(/jwt|expired|unauthorized|401|invalid token|auth/i.test(msg)){
@@ -523,7 +584,7 @@ function resumePay(o){
   PRODUCTS.forEach(function(pp){ if(pp.id === o.product_id) p = pp; });
   if(!p) p = { id: o.product_id, name: o.product_name, price: o.price };
   stopOrder(); stopStatus();
-  showOrderView(p);
+  showOrderView(p, (ptypeOf(p) === "physical" && !o.address), o.id);
   startPayPanel(o.chain, p, o.id);
 }
 function cancelOrder(id){
@@ -723,7 +784,43 @@ function refreshOrderStatus(){
   sb.from("orders").select("status").eq("id", paidOrderId).single().then(function(r){ if(r.data) setOrderStatus(r.data.status); });
 }
 function stopStatus(){ if(statusTimer){ clearInterval(statusTimer); statusTimer=null; } paidOrder=null; paidOrderId=null; }
-/* ===== 我的订单 ===== */
+/* ===== 发货信息展示 ===== */
+function normShip(o){
+  var s = o.ship;
+  if(!s) return {};
+  if(typeof s === "string"){ try{ return JSON.parse(s); }catch(e){ return {}; } }
+  return s || {};
+}
+function shipBox(o){
+  var ship = normShip(o);
+  if(!ship.type) return null;
+  var box = document.createElement("div"); box.className = "ship-box";
+  var title = document.createElement("div"); title.className = "sh-title";
+  if(ship.type === "virtual"){
+    title.textContent = "📧 虚拟商品发货信息（已发送至你的邮箱）";
+    box.appendChild(title);
+    var pre = document.createElement("pre"); pre.textContent = ship.content || "";
+    box.appendChild(pre);
+  } else {
+    title.textContent = "🚚 " + (ship.carrierLabel || "快递") + " · 单号 " + (ship.trackingNo || "");
+    box.appendChild(title);
+    var tr = ship.tracking || [];
+    if(tr.length){
+      var ul = document.createElement("ul"); ul.className = "track-tl";
+      tr.slice().sort(function(a,b){ return String(b.t||"").localeCompare(String(a.t||"")); }).forEach(function(ev){
+        var li = document.createElement("li");
+        var tt = document.createElement("div"); tt.className = "tt"; tt.textContent = ev.t || "";
+        var ss = document.createElement("div"); ss.textContent = ev.s || "";
+        li.appendChild(tt); li.appendChild(ss); ul.appendChild(li);
+      });
+      box.appendChild(ul);
+    } else {
+      var nz = document.createElement("div"); nz.style.color = "var(--muted)"; nz.textContent = "物流信息更新中，稍后再来刷新查看。";
+      box.appendChild(nz);
+    }
+  }
+  return box;
+}
 function fmtTime(iso){ try{ var d=new Date(iso); var p=function(n){return String(n).padStart(2,"0");}; return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+" "+p(d.getHours())+":"+p(d.getMinutes()); }catch(e){ return ""; } }
 function loadMyOrders(){
   if(!myUser || !sb) return;
@@ -744,6 +841,10 @@ function loadMyOrders(){
       d.appendChild(document.createTextNode("订单号 " + shortId(o.id) + " · " + fmtTime(o.created_at) + " · " + (net.label || o.chain || "") + " · "));
       if(o.tx && net.scan){ var a=document.createElement("a"); a.href=net.scan+o.tx; a.target="_blank"; a.rel="noopener"; a.style.color="var(--link)"; a.textContent="交易 "+String(o.tx).slice(0,10)+"…"; d.appendChild(a); }
       div.appendChild(t); div.appendChild(d);
+      if(o.status === "shipped" || o.status === "completed"){
+        var sbx = shipBox(o);
+        if(sbx) div.appendChild(sbx);
+      }
       if((o.status || "") === "unpaid"){
         var ops = document.createElement("div"); ops.style.marginTop = "8px"; ops.style.display = "flex"; ops.style.gap = "8px";
         var go = document.createElement("button"); go.className = "check-btn"; go.style.fontSize = ".82rem"; go.style.padding = "6px 18px"; go.textContent = "去支付";
