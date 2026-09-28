@@ -58,6 +58,7 @@ button.del:disabled { opacity:.55; cursor:wait; }
 .hidden { display:none; }
 .obadge { display:inline-block; padding:2px 10px; border-radius:999px; font-size:.78rem; font-weight:700; }
 .obadge.pending { background:#fff4e0; color:#b26a00; }
+.obadge.unpaid { background:#e9ecef; color:#495057; }
 .obadge.shipped { background:#e8f0fe; color:#1a56db; }
 .obadge.completed { background:#e8f5e9; color:#2e7d32; }
 .ord, .cand { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-top:10px; font-size:.9rem; }
@@ -310,7 +311,7 @@ var SB_URL = "https://vvwyheyojnmeyzbisxnq.supabase.co";
 var SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ2d3loZXlvam5tZXl6YmlzeG5xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MTE0MTQsImV4cCI6MjEwNjE4NzQxNH0.U2ZMJZbgm-5cxP7M383ymjX22UW9ZuvtgU8owXV8oR8";
 var sbs = (window.supabase ? window.supabase.createClient(SB_URL, SB_KEY) : null);
 var sbUser = null, sbIsAdmin = false;
-const OSTATUS = { pending:"待发货", shipped:"已发货", completed:"订单已完成" };
+const OSTATUS = { unpaid:"待支付", pending:"待发货", shipped:"已发货", completed:"订单已完成" };
 function fmtT(ts){
   const d = new Date(ts);
   const p = n => String(n).padStart(2, "0");
@@ -358,10 +359,15 @@ async function loadSbOrders(){
   try{
     const r = await sbs.from("orders").select("*").order("created_at", { ascending: false });
     if(r.error) throw new Error(r.error.message);
+    let buyerMap = {};
+    try{
+      const br = await sbs.rpc("admin_buyer_emails");
+      if(br.data) br.data.forEach(x => { buyerMap[x.order_id] = x.email; });
+    }catch(e){}
     const list = (r.data || []).map(o => ({
       id: o.id, productName: o.product_name, price: o.price,
       chain: o.chain, chainLabel: (o.chain === "bsc" ? "BSC" : (o.chain === "arb" ? "Arbitrum" : (o.chain || ""))),
-      tx: o.tx, time: fmtT(o.created_at), status: o.status
+      tx: o.tx, time: fmtT(o.created_at), status: o.status, buyer: buyerMap[o.id] || ""
     }));
     renderOrders(list);
     renderStats(list);
@@ -379,7 +385,7 @@ function renderOrders(list){
     t.textContent = (o.productName || "未知商品") + " · " + o.price + " USDT ";
     const b = document.createElement("span"); b.innerHTML = badge(o.status || "pending"); t.appendChild(b);
     const d = document.createElement("div"); d.className = "d";
-    d.textContent = (o.time || "") + " · " + (o.chainLabel || o.chain || "") + " · 交易 " + String(o.tx||"").slice(0,14) + "…";
+    d.textContent = (o.time || "") + " · " + (o.chainLabel || o.chain || "") + " · 交易 " + String(o.tx||"").slice(0,14) + "…" + (o.buyer ? " · 买家 " + o.buyer : "");
     const ops = document.createElement("div"); ops.className = "ops";
     if((o.status || "pending") === "pending"){
       const s = document.createElement("button"); s.className = "mini"; s.textContent = "标记发货";
@@ -409,6 +415,7 @@ function renderStats(list){
   if(!list.length){ box.innerHTML = '<div class="empty">暂无数据</div>'; return; }
   const months = {};
   list.forEach(o => {
+    if((o.status || "") === "unpaid") return;
     const m = String(o.time || "").slice(0, 7) || "未知";
     if(!months[m]) months[m] = { rev: 0, count: 0 };
     months[m].rev += parseFloat(o.price) || 0;
