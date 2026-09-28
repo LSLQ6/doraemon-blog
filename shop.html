@@ -358,7 +358,7 @@ function startOrder(p){
   var s=document.getElementById("orderSummary");
   s.innerHTML='<div class="product" style="max-width:420px"><div class="info"><p class="nm"></p><p class="pr"></p></div></div>';
   s.querySelector(".nm").textContent=p.name;
-  s.querySelector(".pr").textContent=p.price+" USDT";
+  s.querySelector(".pr").textContent=fmtPrice(p.price);
   document.getElementById("payPanel").classList.add("hidden");
   document.getElementById("netBsc").classList.remove("sel");
   document.getElementById("netArb").classList.remove("sel");
@@ -389,7 +389,7 @@ function startPayPanel(key,p,dbId){
   var net=NETS[key];
   document.getElementById("netBsc").classList.toggle("sel",key==="bsc");
   document.getElementById("netArb").classList.toggle("sel",key==="arb");
-  document.getElementById("payAmount").textContent=p.price+" USDT";
+  document.getElementById("payAmount").textContent=fmtPrice(p.price)+"（"+p.price+" USDT）";
   document.getElementById("payAddr").textContent=SELLER;
   document.getElementById("payQR").src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data="+SELLER;
   document.getElementById("payPanel").classList.remove("hidden");
@@ -410,7 +410,7 @@ function resumePay(o){
   var s=document.getElementById("orderSummary");
   s.innerHTML='<div class="product" style="max-width:420px"><div class="info"><p class="nm"></p><p class="pr"></p></div></div>';
   s.querySelector(".nm").textContent=p.name;
-  s.querySelector(".pr").textContent=p.price+" USDT";
+  s.querySelector(".pr").textContent=fmtPrice(p.price);
   document.getElementById("payPanel").classList.add("hidden");
   document.getElementById("netBsc").classList.remove("sel");
   document.getElementById("netArb").classList.remove("sel");
@@ -481,7 +481,7 @@ function showPaidSuccess(txl, key, net, prod, orderId){
   box.innerHTML="";
   box.appendChild(row("订单号", shortId(orderId)));
   box.appendChild(row("商品", paidOrder.name));
-  box.appendChild(row("金额", paidOrder.price+" USDT（"+net.label+"）"));
+  box.appendChild(row("金额", fmtPrice(paidOrder.price)+"（"+net.label+"）"));
   box.appendChild(row("付款时间", paidOrder.time));
   var txrow=document.createElement("div"); txrow.className="rowline";
   var ka=document.createElement("span"); ka.textContent="交易哈希";
@@ -513,7 +513,7 @@ function loadMyOrders(){
     list.forEach(function(o){
       var div = document.createElement("div"); div.className = "ord";
       var t = document.createElement("div"); t.className = "t";
-      t.textContent = (o.product_name || "商品") + " · " + o.price + " USDT ";
+      t.textContent = (o.product_name || "商品") + " · " + fmtPrice(o.price) + " ";
       var badge = document.createElement("span"); badge.className = "obadge " + (o.status||"pending"); badge.textContent = OSTATUS_BADGE[o.status] || o.status;
       t.appendChild(badge);
       var d = document.createElement("div"); d.className = "d";
@@ -543,7 +543,7 @@ var claimNet = "bsc";
 function fillClaimProds(){
   var sel = document.getElementById("claimProd"); sel.innerHTML = "";
   PRODUCTS.forEach(function(p){
-    var op = document.createElement("option"); op.value = p.id; op.textContent = p.name + "（" + p.price + " USDT）";
+    var op = document.createElement("option"); op.value = p.id; op.textContent = p.name + "（" + fmtPrice(p.price) + "）";
     sel.appendChild(op);
   });
 }
