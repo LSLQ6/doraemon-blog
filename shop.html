@@ -11,6 +11,12 @@
 .shop-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; margin:18px 0 40px; }
 .product { background:var(--card); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
 .product img { width:100%; height:160px; object-fit:cover; display:block; background:#eee; }
+.pimgs { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+.pimgs::-webkit-scrollbar { display:none; }
+.pimgs img { width:100%; height:160px; object-fit:cover; flex:0 0 100%; scroll-snap-align:start; display:block; background:#eee; }
+.pimg-dots { display:flex; gap:5px; justify-content:center; padding:7px 0 3px; }
+.pimg-dots span { width:6px; height:6px; border-radius:50%; background:#ccc; }
+.pimg-dots span.on { background:#e2482e; }
 .product .info { padding:14px 16px; }
 .product .nm { font-weight:700; margin:0 0 6px; }
 .product .ds { color:var(--muted); font-size:.85rem; margin:0 0 10px; }
@@ -317,6 +323,17 @@ function stockLeft(p){
   if(isNaN(s)) return null;
   return Math.max(0, Math.floor(s) - (SOLD[p.id] || 0));
 }
+function pImgs(p){ if(p.images && p.images.length) return p.images; return p.image ? [p.image] : []; }
+function imgHtml(p){
+  var imgs = pImgs(p);
+  if(!imgs.length) return "";
+  if(imgs.length === 1) return '<img src="'+imgs[0]+'" alt="" loading="lazy">';
+  var s = '<div class="pimgs">';
+  for(var i=0;i<imgs.length;i++){ s += '<img src="'+imgs[i]+'" alt="" loading="lazy">'; }
+  s += '</div><div class="pimg-dots">';
+  for(var j=0;j<imgs.length;j++){ s += '<span class="'+(j===0?'on':'')+'"></span>'; }
+  return s + '</div>';
+}
 function render(){
   var g = document.getElementById("productGrid"); g.innerHTML="";
   var list = PRODUCTS;
@@ -325,7 +342,7 @@ function render(){
   document.getElementById("emptyShop").classList.add("hidden");
   list.forEach(function(p){
     var div=document.createElement("div"); div.className="product";
-    div.innerHTML = (p.image?'<img src="'+p.image+'" alt="" loading="lazy">':'') + '<div class="info"><p class="nm"></p><p class="ds"></p><p class="pr"></p><p class="sold"></p><p class="stk none"></p><button class="buy-btn">购买</button></div>';
+    div.innerHTML = imgHtml(p) + '<div class="info"><p class="nm"></p><p class="ds"></p><p class="pr"></p><p class="sold"></p><p class="stk none"></p><button class="buy-btn">购买</button></div>';
     div.querySelector(".nm").textContent=p.name;
     div.querySelector(".ds").textContent=p.desc||"";
     div.querySelector(".pr").textContent=fmtPrice(p.price);
@@ -348,6 +365,15 @@ function render(){
     } else {
       btn.onclick = function(){ startOrder(p); };
     }
+    (function(card){
+      var wrap = card.querySelector(".pimgs");
+      if(!wrap) return;
+      var dots = card.querySelectorAll(".pimg-dots span");
+      wrap.addEventListener("scroll", function(){
+        var idx = Math.round(wrap.scrollLeft / Math.max(1, wrap.clientWidth));
+        for(var k=0;k<dots.length;k++){ dots[k].className = k===idx ? "on" : ""; }
+      }, {passive:true});
+    })(div);
     g.appendChild(div);
   });
 }
