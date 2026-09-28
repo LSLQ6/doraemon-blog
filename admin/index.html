@@ -119,7 +119,7 @@ select.psel { padding:8px 10px; font-size:.9rem; border:1px solid var(--border);
 <div id="paneShop" class="hidden">
   <label>商品名称</label><input type="text" id="pName" placeholder="例如：手工皂"><div class="row"><div><label>价格（USDT）</label><input type="text" id="pPrice" inputmode="decimal" placeholder="例如：10"></div><div><label>商品图片链接（可选）</label><input type="text" id="pImg" placeholder="https://…"></div></div><label>商品描述（可选）</label><input type="text" id="pDesc" placeholder="一句话介绍"><button class="publish" id="addProductBtn">上架商品</button><button class="load" id="loadProductsBtn" style="margin-top:12px">加载商品列表</button><div id="productList"></div></div><div id="paneOrders" class="hidden">
 <label>订单管理</label>
-<p class="hint">买家付款后，先点「扫描链上订单」找到这笔转账，导入为订单；买家页面会自动显示「等待发货」。你点「标记发货」/「标记完成」，买家页面就会同步更新。</p>
+<p class="hint">已开启全自动同步：每 15 分钟自动扫描链上收款并生成订单，一般无需手动操作。下面是手动补扫入口（比如自动任务还没跑到时）。买家付款后，订单会自动出现在这里，状态为「待发货」。</p>
 <div class="scanrow">
 <div><label style="margin-top:0">扫描最近天数</label><input type="text" id="scanDays" inputmode="numeric" value="3"></div>
 <button class="mini" id="scanBtn" style="padding:12px 20px">扫描链上订单</button>
@@ -361,17 +361,19 @@ $("scanBtn").onclick = async () => {
       const latest = parseInt(await orpc(net.rpc, "eth_blockNumber", []), 16);
       let from = latest - Math.ceil(days * 86400 / net.blockTime);
       if(from < 0) from = 0;
-      for(let a = from; a <= latest; a += net.chunk + 1){
-        const b = Math.min(a + net.chunk, latest);
+      for(let b = latest; b > from; ){
+        const a = Math.max(from, b - net.chunk);
         let logs = [];
         try{ logs = await orpc(net.rpc, "eth_getLogs", [{fromBlock:"0x"+a.toString(16), toBlock:"0x"+b.toString(16), address:net.token, topics:[OTRANSFER,null,OTO_TOPIC]}]); }
-        catch(e){ continue; }
+        catch(e){ if(/archive/i.test(e.message||"")) break; b = a - 1; continue; }
         for(const l of logs){
           const tx = String(l.transactionHash).toLowerCase();
           if(known[tx]) continue;
           if(cands.some(c => c.tx === tx)) continue;
+          if(BigInt(l.data) <= 0n) continue;
           cands.push({ key, net, tx, value: BigInt(l.data), block: l.blockNumber, fromAddr: "0x" + l.topics[1].slice(26) });
         }
+        b = a - 1;
       }
     }
     // 取时间
@@ -441,6 +443,7 @@ $("loadOrdersBtn").onclick = async () => {
   const btn = $("loadOrdersBtn"); btn.disabled = true;
   try{
     setStatus("正在加载订单…", "info");
+    OPRODUCTS = await getProducts(token);
     const { list } = await getOrders(token);
     renderOrders(list, token);
     renderStats(list);
@@ -462,6 +465,18 @@ function renderOrders(list, token){
     const d = document.createElement("div"); d.className = "d";
     d.textContent = (o.time || "") + " · " + (o.chainLabel || o.chain || "") + " · 交易 " + String(o.tx||"").slice(0,14) + "…";
     const ops = document.createElement("div"); ops.className = "ops";
+    if(!o.productId){
+      const sel = document.createElement("select"); sel.className = "psel";
+      sel.innerHTML = '<option value="">— 选择商品 —</option>';
+      OPRODUCTS.forEach(p => {
+        const op = document.createElement("option"); op.value = p.id;
+        op.textContent = p.name + "（" + p.price + " USDT）";
+        sel.appendChild(op);
+      });
+      const ok = document.createElement("button"); ok.className = "mini"; ok.textContent = "确认商品";
+      ok.onclick = () => confirmProduct(o, sel.value, token, ok);
+      ops.appendChild(sel); ops.appendChild(ok);
+    }
     if((o.status || "pending") === "pending"){
       const s = document.createElement("button"); s.className = "mini"; s.textContent = "标记发货";
       s.onclick = () => changeStatus(o, "shipped", token, s);
@@ -474,6 +489,22 @@ function renderOrders(list, token){
     div.appendChild(t); div.appendChild(d); div.appendChild(ops);
     box.appendChild(div);
   });
+}
+
+async function confirmProduct(o, productId, token, btn){
+  const p = OPRODUCTS.find(x => x.id === productId);
+  if(!p) return setStatus("请先选择商品。", "err");
+  btn.disabled = true;
+  try{
+    setStatus("正在确认商品…", "info");
+    const cur = await getOrders(token);
+    const it = cur.list.find(x => String(x.tx||x.id||"").toLowerCase() === String(o.tx||o.id||"").toLowerCase());
+    if(!it) throw new Error("订单不存在");
+    it.productId = p.id; it.productName = p.name; it.price = p.price;
+    await saveOrders(token, cur.list, cur.sha, "订单确认商品：" + p.name);
+    renderOrders(cur.list, token);
+    setStatus("已确认为「" + p.name + "」。", "ok");
+  }catch(e){ setStatus("操作失败：" + e.message, "err"); btn.disabled = false; }
 }
 
 async function changeStatus(o, st, token, btn){
