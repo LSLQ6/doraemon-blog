@@ -28,6 +28,10 @@
 .net-btns { display:flex; gap:10px; margin:14px 0; }
 .net-btns button { flex:1; padding:12px; border:1px solid var(--border); border-radius:10px; background:var(--card); color:var(--text); font-size:.95rem; font-weight:600; cursor:pointer; }
 .net-btns button.sel { background:var(--text); color:var(--bg); }
+.pm-btn { display:flex; align-items:center; gap:12px; width:100%; padding:13px 14px; margin:8px 0; border:1px solid var(--border); border-radius:10px; background:var(--bg); color:var(--text); font-size:1rem; font-weight:600; cursor:pointer; text-align:left; box-sizing:border-box; }
+.pm-btn:hover { border-color:var(--accent); }
+.pm-btn svg { flex-shrink:0; }
+.pm-emoji { font-size:1.5rem; width:30px; text-align:center; flex-shrink:0; }
 .pay-panel { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:22px; margin:16px 0; text-align:center; }
 .pay-addr { word-break:break-all; font-size:.85rem; color:var(--muted); background:var(--bg); border:1px dashed var(--border); border-radius:8px; padding:10px; margin:12px 0; }
 .copy-btn, .check-btn { border:1px solid var(--border); background:var(--text); color:var(--bg); border-radius:999px; padding:8px 22px; cursor:pointer; font-size:.9rem; margin:4px; }
@@ -91,11 +95,6 @@
 <p><a class="back" href="#" id="backToList">← 返回商品列表</a></p>
 <div class="section-head"><h2>确认订单</h2></div>
 <div id="orderSummary"></div>
-<p style="font-weight:600">选择支付网络：</p>
-<div class="net-btns">
-<button id="netBsc">BSC（BEP20）</button>
-<button id="netArb">Arbitrum One（USDT0）</button>
-</div>
 <div id="payPanel" class="pay-panel hidden">
 <p>请支付 <b id="payAmount" style="font-size:1.3rem;color:var(--accent)"></b></p>
 <img id="payQR" src="" alt="收款二维码" width="200" height="200">
@@ -151,6 +150,9 @@
     </div>
     <p style="margin:12px 0 0;font-size:.85rem;"><a href="#" id="authSwitch" style="color:#1a73e8;">没有账号？去注册</a></p>
   </div>
+</div>
+<div id="payMethodModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999;">
+  <div id="payMethodBox" style="background:var(--card,#fff);border-radius:14px;padding:24px;width:320px;max-width:88vw;color:var(--text,#1a1a1a);"></div>
 </div>
 <script>
 document.getElementById("year").textContent = new Date().getFullYear();
@@ -353,20 +355,84 @@ function rpc(url, method, params){
   return fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:1,method:method,params:params})}).then(function(r){ return r.json(); }).then(function(j){ if(j.error) throw new Error(j.error.message||"RPC error"); return j.result; });
 }
 function stopOrder(){ if(orderTimer){ clearInterval(orderTimer); orderTimer=null; } order=null; }
+function coinIcon(letter, bg, fg){
+  return '<svg width="30" height="30" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="'+bg+'"/><text x="16" y="22" text-anchor="middle" fill="'+fg+'" font-size="17" font-weight="bold" font-family="Arial,sans-serif">'+letter+'</text></svg>';
+}
+var ICON_USDT = coinIcon("T", "#26A17B", "#ffffff");
+var ICON_BSC = coinIcon("B", "#F0B90B", "#1a1a1a");
+var ICON_ARB = coinIcon("A", "#28A0F0", "#ffffff");
+var payMethodProduct = null;
+function pmBtn(iconHtml, label){
+  var b = document.createElement("button");
+  b.className = "pm-btn";
+  b.innerHTML = iconHtml;
+  var s = document.createElement("span"); s.textContent = label;
+  b.appendChild(s);
+  return b;
+}
+function pmTitle(text){
+  var t = document.createElement("p");
+  t.style.cssText = "margin:0 0 12px;font-weight:700;font-size:1.02rem;";
+  t.textContent = text;
+  return t;
+}
+function pmBack(label, fn){
+  var b = document.createElement("button");
+  b.className = "cancel-btn"; b.style.marginTop = "6px";
+  b.textContent = label;
+  b.onclick = fn;
+  return b;
+}
+function openPayMethods(p){
+  payMethodProduct = p;
+  stopOrder();
+  var box = document.getElementById("payMethodBox");
+  box.innerHTML = "";
+  var t = document.createElement("p"); t.style.cssText = "margin:0 0 4px;font-weight:700;font-size:1.05rem;"; t.textContent = p.name;
+  var pr = document.createElement("p"); pr.style.cssText = "margin:0 0 14px;font-weight:800;font-size:1.15rem;color:var(--accent);"; pr.textContent = fmtPrice(p.price);
+  box.appendChild(t); box.appendChild(pr);
+  box.appendChild(pmTitle("选择支付方式"));
+  var b1 = pmBtn(ICON_USDT, "USDT支付");
+  b1.onclick = function(){ showPayNets(p); };
+  var b2 = pmBtn('<span class="pm-emoji">💳</span>', "其他支付");
+  b2.onclick = showComingSoon;
+  box.appendChild(b1); box.appendChild(b2);
+  box.appendChild(pmBack("取消", closePayMethods));
+  document.getElementById("payMethodModal").classList.remove("hidden");
+}
+function showPayNets(p){
+  var box = document.getElementById("payMethodBox");
+  box.innerHTML = "";
+  box.appendChild(pmTitle("选择支付网络"));
+  var b1 = pmBtn(ICON_BSC, "BSC（BEP20）");
+  b1.onclick = function(){ closePayMethods(); showOrderView(p); chooseNet("bsc", p); };
+  var b2 = pmBtn(ICON_ARB, "Arbitrum One（USDT0）");
+  b2.onclick = function(){ closePayMethods(); showOrderView(p); chooseNet("arb", p); };
+  box.appendChild(b1); box.appendChild(b2);
+  box.appendChild(pmBack("← 返回", function(){ openPayMethods(p); }));
+}
+function showComingSoon(){
+  var box = document.getElementById("payMethodBox");
+  box.innerHTML = "";
+  var e = document.createElement("p"); e.style.cssText = "font-size:2.4rem;margin:6px 0;"; e.textContent = "🚧";
+  var t = document.createElement("p"); t.style.cssText = "margin:0 0 14px;font-weight:700;"; t.textContent = "其他支付即将上线，敬请期待";
+  box.appendChild(e); box.appendChild(t);
+  box.appendChild(pmBack("← 返回", function(){ openPayMethods(payMethodProduct); }));
+}
+function closePayMethods(){ document.getElementById("payMethodModal").classList.add("hidden"); }
+document.getElementById("payMethodModal").addEventListener("click", function(e){ if(e.target && e.target.id === "payMethodModal") closePayMethods(); });
+function showOrderView(p){
+  var s = document.getElementById("orderSummary");
+  s.innerHTML = '<div class="product" style="max-width:420px"><div class="info"><p class="nm"></p><p class="pr"></p></div></div>';
+  s.querySelector(".nm").textContent = p.name;
+  s.querySelector(".pr").textContent = fmtPrice(p.price);
+  document.getElementById("payPanel").classList.add("hidden");
+  show("view-order");
+}
 function startOrder(p){
   var left0 = stockLeft(p);
   if(left0 !== null && left0 <= 0){ alert("这个商品已经售罄了。"); return; }
-  stopOrder();
-  var s=document.getElementById("orderSummary");
-  s.innerHTML='<div class="product" style="max-width:420px"><div class="info"><p class="nm"></p><p class="pr"></p></div></div>';
-  s.querySelector(".nm").textContent=p.name;
-  s.querySelector(".pr").textContent=fmtPrice(p.price);
-  document.getElementById("payPanel").classList.add("hidden");
-  document.getElementById("netBsc").classList.remove("sel");
-  document.getElementById("netArb").classList.remove("sel");
-  document.getElementById("netBsc").onclick=function(){ chooseNet("bsc",p); };
-  document.getElementById("netArb").onclick=function(){ chooseNet("arb",p); };
-  show("view-order");
+  openPayMethods(p);
 }
 function setStatus(html){ document.getElementById("payStatus").innerHTML=html; }
 function chooseNet(key,p){
@@ -389,8 +455,6 @@ function chooseNet(key,p){
 function startPayPanel(key,p,dbId){
   stopOrder();
   var net=NETS[key];
-  document.getElementById("netBsc").classList.toggle("sel",key==="bsc");
-  document.getElementById("netArb").classList.toggle("sel",key==="arb");
   document.getElementById("payAmount").textContent=fmtPrice(p.price)+"（"+p.price+" USDT）";
   document.getElementById("payAddr").textContent=SELLER;
   document.getElementById("payQR").src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data="+SELLER;
@@ -409,16 +473,7 @@ function resumePay(o){
   PRODUCTS.forEach(function(pp){ if(pp.id === o.product_id) p = pp; });
   if(!p) p = { id: o.product_id, name: o.product_name, price: o.price };
   stopOrder(); stopStatus();
-  var s=document.getElementById("orderSummary");
-  s.innerHTML='<div class="product" style="max-width:420px"><div class="info"><p class="nm"></p><p class="pr"></p></div></div>';
-  s.querySelector(".nm").textContent=p.name;
-  s.querySelector(".pr").textContent=fmtPrice(p.price);
-  document.getElementById("payPanel").classList.add("hidden");
-  document.getElementById("netBsc").classList.remove("sel");
-  document.getElementById("netArb").classList.remove("sel");
-  document.getElementById("netBsc").onclick=function(){ chooseNet("bsc",p); };
-  document.getElementById("netArb").onclick=function(){ chooseNet("arb",p); };
-  show("view-order");
+  showOrderView(p);
   startPayPanel(o.chain, p, o.id);
 }
 function cancelOrder(id){
