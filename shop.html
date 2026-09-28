@@ -47,7 +47,12 @@
 <nav class="main-nav">
 <a href="index.html">文章</a>
 <a href="shop.html">购物</a>
+<button class="icon-btn" id="searchToggle" aria-label="搜索">🔍</button>
+<button class="icon-btn" id="themeToggle" aria-label="切换深色模式">🌙</button>
 </nav>
+</div>
+<div class="wrap search-bar hidden" id="searchBar">
+<input type="search" id="searchInput" placeholder="搜索商品名称…">
 </div>
 </header>
 <main class="wrap">
@@ -105,6 +110,30 @@ var SOLD = {};
 var orderTimer = null, order = null;
 var statusTimer = null, paidOrder = null;
 var OSTATUSTXT = { pending:"⏳ 等待发货", shipped:"📦 卖家已发货", completed:"🎉 订单已完成" };
+var searchKw = "";
+document.getElementById("searchToggle").onclick = function(){
+  var bar = document.getElementById("searchBar");
+  bar.classList.toggle("hidden");
+  var inp = document.getElementById("searchInput");
+  if(bar.classList.contains("hidden")){ inp.value=""; searchKw=""; render(); }
+  else { inp.focus(); }
+};
+document.getElementById("searchInput").addEventListener("input", function(e){
+  searchKw = e.target.value.trim().toLowerCase();
+  render();
+});
+var themeBtn = document.getElementById("themeToggle");
+function setTheme(t){
+  document.documentElement.dataset.theme = t;
+  themeBtn.textContent = t === "dark" ? "☀️" : "🌙";
+  try { localStorage.setItem("blog-theme", t); } catch (e) {}
+}
+var saved = "light";
+try { saved = localStorage.getItem("blog-theme") || "light"; } catch (e) {}
+setTheme(saved);
+themeBtn.onclick = function(){
+  setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+};
 function show(id){ ["view-list","view-order","view-success"].forEach(function(v){ document.getElementById(v).classList.toggle("hidden", v!==id); }); window.scrollTo(0,0); }
 function loadOrders(){
   return fetch("orders.json?t="+Date.now()).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(d){
@@ -116,8 +145,11 @@ function loadOrders(){
 fetch("products.json").then(function(r){ return r.json(); }).then(function(d){ PRODUCTS=d; return loadOrders(); }).then(function(){ render(); }).catch(function(){ document.getElementById("emptyShop").classList.remove("hidden"); });
 function render(){
   var g = document.getElementById("productGrid"); g.innerHTML="";
-  if(!PRODUCTS.length){ document.getElementById("emptyShop").classList.remove("hidden"); return; }
-  PRODUCTS.forEach(function(p){
+  var list = PRODUCTS;
+  if(searchKw){ list = PRODUCTS.filter(function(p){ return ((p.name||"")+(p.desc||"")).toLowerCase().indexOf(searchKw) >= 0; }); }
+  if(!list.length){ document.getElementById("emptyShop").classList.remove("hidden"); return; }
+  document.getElementById("emptyShop").classList.add("hidden");
+  list.forEach(function(p){
     var div=document.createElement("div"); div.className="product";
     div.innerHTML = (p.image?'<img src="'+p.image+'" alt="" loading="lazy">':'') + '<div class="info"><p class="nm"></p><p class="ds"></p><p class="pr"></p><p class="sold"></p><button class="buy-btn">购买</button></div>';
     div.querySelector(".nm").textContent=p.name;
