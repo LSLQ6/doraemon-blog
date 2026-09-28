@@ -170,7 +170,6 @@ html[data-theme="dark"] .site-header {
 #view-about { padding-bottom: 60px; }
 
 
-
 .site-footer {
   border-top: 1px solid var(--border);
   padding: 26px 0; color: var(--muted); font-size: .85rem;
@@ -180,3 +179,5 @@ html[data-theme="dark"] .site-header {
 .site-footer p { margin: 0; }
 
 .footer-line { font-size: 1.05rem; } .brand-row { display: flex; align-items: center; gap: 10px; } .brand-logo { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; }
+
+.pen-link { position: absolute; top: 12px; left: 16px; font-size: 1.35rem; text-decoration: none; z-index: 20; }
