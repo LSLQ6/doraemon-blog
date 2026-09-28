@@ -76,15 +76,7 @@ button.del:disabled { opacity:.55; cursor:wait; }
 <div id="paneWrite">
 <label>标题</label>
 <input type="text" id="title" placeholder="给文章起个标题">
-<div class="row">
-<div>
-<label>分类</label>
-<input type="text" id="category" list="cats" placeholder="如：生活">
-<datalist id="cats">
-<option value="生活"><option value="阅读"><option value="思考"><option value="技术">
-</datalist>
-</div>
-<div>
+<div class="row"><div>
 <label>日期</label>
 <input type="date" id="date">
 </div>
@@ -156,7 +148,7 @@ async function gh(path, token, method, body) {
 $("publishBtn").onclick = async () => {
   const token = $("token").value.trim();
   const title = $("title").value.trim();
-  const category = $("category").value.trim() || "生活";
+  const category = "生活";
   const date = $("date").value || new Date().toISOString().slice(0, 10);
   const excerpt = $("excerpt").value.trim();
   const body = $("body").value.trim();
