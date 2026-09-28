@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>购物 · 祁萧远的博客</title>
+<meta name="description" content="商品列表，支持 USDT 支付">
+<link rel="stylesheet" href="styles.css?v=8">
+<style>
+.shop-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; margin:18px 0 40px; }
+.product { background:var(--card); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+.product img { width:100%; height:160px; object-fit:cover; display:block; background:#eee; }
+.product .info { padding:14px 16px; }
+.product .nm { font-weight:700; margin:0 0 6px; }
+.product .ds { color:var(--muted); font-size:.85rem; margin:0 0 10px; }
+.product .pr { font-weight:800; font-size:1.1rem; color:var(--accent); margin:0 0 10px; }
+.buy-btn { width:100%; padding:10px; border:none; border-radius:8px; background:var(--text); color:var(--bg); font-size:.95rem; font-weight:600; cursor:pointer; }
+.net-btns { display:flex; gap:10px; margin:14px 0; }
+.net-btns button { flex:1; padding:12px; border:1px solid var(--border); border-radius:10px; background:var(--card); color:var(--text); font-size:.95rem; font-weight:600; cursor:pointer; }
+.net-btns button.sel { background:var(--text); color:var(--bg); }
+.pay-panel { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:22px; margin:16px 0; text-align:center; }
+.pay-addr { word-break:break-all; font-size:.85rem; color:var(--muted); background:var(--bg); border:1px dashed var(--border); border-radius:8px; padding:10px; margin:12px 0; }
+.copy-btn, .check-btn { border:1px solid var(--border); background:var(--text); color:var(--bg); border-radius:999px; padding:8px 22px; cursor:pointer; font-size:.9rem; margin:4px; }
+.cancel-btn { background:none; border:none; color:var(--muted); cursor:pointer; font-size:.85rem; margin-top:8px; }
+.status { font-size:.92rem; margin:10px 0; }
+.spin { display:inline-block; animation:spin 1s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.success { text-align:center; padding:40px 0; }
+.success .tick { font-size:3rem; }
+.back { color:var(--link); text-decoration:none; font-size:.9rem; }
+.empty { color:var(--muted); text-align:center; padding:40px 0; }
+.hidden { display:none !important; }
+.pay-note2 { color:var(--muted); font-size:.83rem; }
+</style>
+</head>
+<body>
+<header class="site-header">
+<div class="wrap header-inner">
+<span class="brand-row"><img src="logo.png" class="brand-logo" alt=""><a class="brand" href="index.html">祁萧远的博客</a></span>
+<nav class="main-nav">
+<a href="index.html">文章</a>
+<a href="shop.html">购物</a>
+</nav>
+</div>
+</header>
+<main class="wrap">
+<section id="view-list">
+<div class="section-head"><h2>商品</h2></div>
+<div id="productGrid" class="shop-grid"></div>
+<div id="emptyShop" class="empty hidden">店主还未上架商品，敬请期待。</div>
+</section>
+<section id="view-order" class="hidden">
+<p><a class="back" href="#" id="backToList">← 返回商品列表</a></p>
+<div class="section-head"><h2>确认订单</h2></div>
+<div id="orderSummary"></div>
+<p style="font-weight:600">选择支付网络：</p>
+<div class="net-btns">
+<button id="netBsc">BSC（BEP20）</button>
+<button id="netArb">Arbitrum One（USDT0）</button>
+</div>
+<div id="payPanel" class="pay-panel hidden">
+<p>请支付 <b id="payAmount" style="font-size:1.3rem;color:var(--accent)"></b></p>
+<img id="payQR" src="" alt="收款二维码" width="200" height="200">
+<p class="pay-addr" id="payAddr"></p>
+<div>
+<button class="copy-btn" id="copyAddrBtn">复制地址</button>
+<button class="check-btn" id="checkBtn">我已付款，立即检测</button>
+</div>
+<p class="status" id="payStatus"></p>
+<p class="pay-note2">请务必使用上方选择的网络转账，转错网络资产可能丢失。检测到付款后会自动显示成功。</p>
+<button class="cancel-btn" id="cancelOrder">取消订单</button>
+</div>
+</section>
+<section id="view-success" class="hidden">
+<div class="success">
+<div class="tick">✅</div>
+<h2>支付成功！</h2>
+<p id="txLine" style="word-break:break-all;font-size:.85rem;color:var(--muted)"></p>
+<p><a class="back" href="#" id="backToList2">← 返回商品列表</a></p>
+</div>
+</section>
+</main>
+<footer class="site-footer"><div class="wrap"><p class="footer-line">© <span id="year"></span></p></div></footer>
+<script>
+document.getElementById("year").textContent = new Date().getFullYear();
+var SELLER = "0x5a93d426357cfc7b83d27cec9d4776b05fc73149";
+var TRANSFER = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+var NETS = {
+  bsc: { label:"BSC（BEP20）", rpc:"https://bsc.publicnode.com", token:"0x55d398326f99059fF775485246999027B3197955", dec:18, scan:"https://bscscan.com/tx/" },
+  arb: { label:"Arbitrum One（USDT0）", rpc:"https://arb1.arbitrum.io/rpc", token:"0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9", dec:6, scan:"https://arbiscan.io/tx/" }
+};
+var TO_TOPIC = "0x000000000000000000000000" + SELLER.slice(2).toLowerCase();
+var PRODUCTS = [];
+var orderTimer = null, order = null;
+function show(id){ ["view-list","view-order","view-success"].forEach(function(v){ document.getElementById(v).classList.toggle("hidden", v!==id); }); window.scrollTo(0,0); }
+fetch("products.json").then(function(r){ return r.json(); }).then(function(d){ PRODUCTS=d; render(); }).catch(function(){ document.getElementById("emptyShop").classList.remove("hidden"); });
+function render(){
+  var g = document.getElementById("productGrid"); g.innerHTML="";
+  if(!PRODUCTS.length){ document.getElementById("emptyShop").classList.remove("hidden"); return; }
+  PRODUCTS.forEach(function(p){
+    var div=document.createElement("div"); div.className="product";
+    div.innerHTML = (p.image?'<img src="'+p.image+'" alt="" loading="lazy">':'') + '<div class="info"><p class="nm"></p><p class="ds"></p><p class="pr"></p><button class="buy-btn">购买</button></div>';
+    div.querySelector(".nm").textContent=p.name;
+    div.querySelector(".ds").textContent=p.desc||"";
+    div.querySelector(".pr").textContent=p.price+" USDT";
+    div.querySelector(".buy-btn").onclick=function(){ startOrder(p); };
+    g.appendChild(div);
+  });
+}
+function toUnits(s, dec){
+  var parts=String(s).trim().split(".");
+  var w=((parts[0]||"0").replace(/\D/g,""))||"0";
+  var f=(((parts[1]||"").replace(/\D/g,"")).slice(0,dec)+"000000000000000000".slice(0,dec)).slice(0,dec);
+  return BigInt(w+f);
+}
+function rpc(url, method, params){
+  return fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:1,method:method,params:params})}).then(function(r){ return r.json(); }).then(function(j){ if(j.error) throw new Error(j.error.message||"RPC error"); return j.result; });
+}
+function stopOrder(){ if(orderTimer){ clearInterval(orderTimer); orderTimer=null; } order=null; }
+function startOrder(p){
+  stopOrder();
+  var s=document.getElementById("orderSummary");
+  s.innerHTML='<div class="product" style="max-width:420px"><div class="info"><p class="nm"></p><p class="pr"></p></div></div>';
+  s.querySelector(".nm").textContent=p.name;
+  s.querySelector(".pr").textContent=p.price+" USDT";
+  document.getElementById("payPanel").classList.add("hidden");
+  document.getElementById("netBsc").classList.remove("sel");
+  document.getElementById("netArb").classList.remove("sel");
+  document.getElementById("netBsc").onclick=function(){ chooseNet("bsc",p); };
+  document.getElementById("netArb").onclick=function(){ chooseNet("arb",p); };
+  show("view-order");
+}
+function setStatus(html){ document.getElementById("payStatus").innerHTML=html; }
+function chooseNet(key,p){
+  stopOrder();
+  var net=NETS[key];
+  document.getElementById("netBsc").classList.toggle("sel",key==="bsc");
+  document.getElementById("netArb").classList.toggle("sel",key==="arb");
+  document.getElementById("payAmount").textContent=p.price+" USDT";
+  document.getElementById("payAddr").textContent=SELLER;
+  document.getElementById("payQR").src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data="+SELLER;
+  document.getElementById("payPanel").classList.remove("hidden");
+  setStatus("正在连接网络…");
+  rpc(net.rpc,"eth_blockNumber",[]).then(function(blk){
+    order={key:key,net:net,need:toUnits(p.price,net.dec),from:blk,errs:0,deadline:Date.now()+30*60*1000};
+    setStatus('<span class="spin">⏳</span> 等待付款…（每 15 秒自动检测一次）');
+    poll();
+    orderTimer=setInterval(poll,15000);
+  }).catch(function(){ setStatus("网络连接失败，请检查网络后点「我已付款，立即检测」重试。"); });
+}
+function poll(){
+  if(!order) return;
+  if(Date.now()>order.deadline){ stopOrder(); setStatus("订单已超时（30 分钟）。如已付款请联系店主确认，或重新下单。"); return; }
+  rpc(order.net.rpc,"eth_blockNumber",[]).then(function(latest){
+    return rpc(order.net.rpc,"eth_getLogs",[{fromBlock:order.from,toBlock:latest,address:order.net.token,topics:[TRANSFER,null,TO_TOPIC]}]).then(function(logs){
+      order.from=latest; order.errs=0;
+      for(var i=0;i<logs.length;i++){ if(BigInt(logs[i].data)>=order.need){ onPaid(logs[i].transactionHash); return; } }
+      setStatus('<span class="spin">⏳</span> 等待付款…（每 15 秒自动检测一次）');
+    });
+  }).catch(function(){
+    if(!order) return;
+    order.errs++;
+    setStatus("检测遇到网络波动，正在重试…（"+order.errs+"）");
+  });
+}
+function onPaid(tx){
+  var net=order.net; stopOrder(); show("view-success");
+  document.getElementById("txLine").innerHTML='交易哈希：<a href="'+net.scan+tx+'" target="_blank" rel="noopener">'+tx+'</a><br>付款成功！请截图保存，并联系店主确认发货。';
+}
+document.getElementById("checkBtn").onclick=function(){ if(order) poll(); else setStatus("请先选择支付网络。"); };
+document.getElementById("copyAddrBtn").onclick=function(){
+  var t=SELLER, btn=this;
+  function done(){ btn.textContent="已复制 ✓"; setTimeout(function(){ btn.textContent="复制地址"; },1500); }
+  function fallback(){ var ta=document.createElement("textarea"); ta.value=t; document.body.appendChild(ta); ta.select(); try{ document.execCommand("copy"); }catch(e){} ta.remove(); done(); }
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(done).catch(fallback); } else fallback();
+};
+function backList(e){ if(e) e.preventDefault(); stopOrder(); show("view-list"); }
+document.getElementById("backToList").onclick=backList;
+document.getElementById("backToList2").onclick=backList;
+document.getElementById("cancelOrder").onclick=function(){ backList(); };
+</script>
+</body>
+</html>
