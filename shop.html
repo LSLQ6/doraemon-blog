@@ -98,6 +98,7 @@
 <div id="payPanel" class="pay-panel hidden">
 <p class="pay-note2" style="color:#d93025;font-weight:700;">⚠️ 请确保店主实际收到 <span id="payNeedFull"></span> USDT：从交易所提币时手续费是另外扣的，请把手续费算进去、足额转出；少到账（比如只到 5.98）系统检测不到付款。</p>
 <p>请支付 <b id="payAmount" style="font-size:1.3rem;color:var(--text)"></b></p>
+<p style="font-weight:700;margin:0 0 8px;">支付网络：<span id="payNetLabel"></span></p>
 <img id="payQR" src="" alt="收款二维码" width="200" height="200">
 <p class="pay-addr" id="payAddr"></p>
 <div>
@@ -457,6 +458,7 @@ function startPayPanel(key,p,dbId){
   stopOrder();
   var net=NETS[key];
   document.getElementById("payAmount").textContent=fmtPrice(p.price)+"（"+p.price+" USDT）";
+  document.getElementById("payNetLabel").textContent=net.label;
   document.getElementById("payNeedFull").textContent=p.price;
   document.getElementById("payAddr").textContent=SELLER;
   document.getElementById("payQR").src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data="+SELLER;
