@@ -168,6 +168,28 @@ var NETS = {
 var TO_TOPIC = "0x000000000000000000000000" + SELLER.slice(2).toLowerCase();
 var PRODUCTS = [];
 var SOLD = {};
+var USD_CNY = 0;
+try{ var _rc = JSON.parse(localStorage.getItem("usd_cny") || "null"); if(_rc && _rc.t && Date.now() - _rc.t < 3600e3 && _rc.r) USD_CNY = Number(_rc.r); }catch(e){}
+async function loadRate(){
+  var urls = ["https://api.frankfurter.app/latest?from=USD&to=CNY", "https://open.er-api.com/v6/latest/USD"];
+  for(var i = 0; i < urls.length; i++){
+    try{
+      var r = await fetch(urls[i]);
+      var j = await r.json();
+      if(j && j.rates && j.rates.CNY){ USD_CNY = Number(j.rates.CNY); break; }
+    }catch(e){}
+  }
+  if(USD_CNY > 0){ try{ localStorage.setItem("usd_cny", JSON.stringify({ r: USD_CNY, t: Date.now() })); }catch(e){} }
+  render();
+}
+function fmtPrice(usd){
+  var s = "$" + usd;
+  if(USD_CNY > 0 && !isNaN(Number(usd))){
+    var cny = Math.round(Number(usd) * USD_CNY * 100) / 100;
+    s += " ≈ ¥" + cny;
+  }
+  return s;
+}
 var orderTimer = null, order = null;
 var statusTimer = null, paidOrder = null, paidOrderId = null;
 var OSTATUSTXT = { pending:"⏳ 等待发货", shipped:"📦 卖家已发货", completed:"🎉 订单已完成" };
@@ -277,6 +299,7 @@ function loadSold(){
     if(r.data){ Object.keys(r.data).forEach(function(k){ SOLD[k] = r.data[k]; }); }
   }).catch(function(){});
 }
+loadRate();
 fetch("products.json").then(function(r){ return r.json(); }).then(function(d){ PRODUCTS=d; return loadSold(); }).then(function(){ render(); fillClaimProds(); }).catch(function(){ document.getElementById("emptyShop").classList.remove("hidden"); });
 function stockLeft(p){
   if(p.stock === null || p.stock === undefined || p.stock === "") return null;
@@ -295,7 +318,7 @@ function render(){
     div.innerHTML = (p.image?'<img src="'+p.image+'" alt="" loading="lazy">':'') + '<div class="info"><p class="nm"></p><p class="ds"></p><p class="pr"></p><p class="sold"></p><p class="stk none"></p><button class="buy-btn">购买</button></div>';
     div.querySelector(".nm").textContent=p.name;
     div.querySelector(".ds").textContent=p.desc||"";
-    div.querySelector(".pr").textContent=p.price+" USDT";
+    div.querySelector(".pr").textContent=fmtPrice(p.price);
     div.querySelector(".sold").textContent="已售出 "+(SOLD[p.id]||0)+" 件";
     var left = stockLeft(p);
     var btn = div.querySelector(".buy-btn");
