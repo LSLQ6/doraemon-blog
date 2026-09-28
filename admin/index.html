@@ -121,7 +121,7 @@ select.psel { padding:8px 10px; font-size:.9rem; border:1px solid var(--border);
 <div id="paneShop" class="hidden">
   <label>商品名称</label><input type="text" id="pName" placeholder="例如：手工皂"><div class="row"><div><label>价格（USDT）</label><input type="text" id="pPrice" inputmode="decimal" placeholder="例如：10"></div><div><label>库存（件，留空=不限）</label><input type="text" id="pStock" inputmode="numeric" placeholder="例如：15"></div></div><div class="row"><div><label>商品图片链接（可选）</label><input type="text" id="pImg" placeholder="https://…"></div></div><label>商品描述（可选）</label><input type="text" id="pDesc" placeholder="一句话介绍"><button class="publish" id="addProductBtn">上架商品</button><button class="load" id="loadProductsBtn" style="margin-top:12px">加载商品列表</button><div id="productList"></div></div><div id="paneOrders" class="hidden">
 <label>订单管理</label>
-<p class="hint">买家在商城登录后付款，订单会自动记入数据库。用你的商城账号登录后，在这里标记发货 / 完成。</p>
+<p class="hint">买家在商城登录后付款，订单会自动记入数据库。用你的商城账号登录后，在这里标记发货 / 完成。如果商城那边已经登录了管理员账号，这里会自动沿用，不用再输密码。</p>
 <div id="sbLoginBox">
 <div class="row"><div><label>商城账号邮箱</label><input type="text" id="sbEmail" placeholder="注册时用的邮箱"></div><div><label>密码</label><input type="password" id="sbPwd" placeholder="密码"></div></div>
 <button class="mini" id="sbLoginBtn" style="padding:10px 22px">登录</button>
@@ -353,6 +353,22 @@ $("sbLogoutBtn").onclick = async () => {
   $("sbLoginBox").classList.remove("hidden");
   $("sbOrdersBox").classList.add("hidden");
 };
+/* 页面打开时：如果商城那边已经登录了管理员账号，直接沿用，不用再输密码。
+   商城页和管理页是同一个域名，登录态存在 localStorage 里是共享的。 */
+(async function autoSbLogin(){
+  if(!sbs) return;
+  try{
+    const s = await sbs.auth.getSession();
+    const u = (s.data && s.data.session) ? s.data.session.user : null;
+    if(!u) return;
+    const p = await sbs.from("profiles").select("is_admin").eq("id", u.id).single();
+    if(p.data && p.data.is_admin){
+      await afterSbLogin();
+    }else{
+      setStatus("检测到商城账号 " + u.email + " 已登录，但它不是管理员账号；订单管理请用管理员账号登录（买家登录态不受影响）。", "err");
+    }
+  }catch(e){ /* 保持显示登录框 */ }
+})();
 async function loadSbOrders(){
   if(!sbs || !sbIsAdmin) return setStatus("请先登录管理员账号。", "err");
   setStatus("正在加载订单…", "info");
