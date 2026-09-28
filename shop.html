@@ -96,6 +96,7 @@
 <div class="section-head"><h2>确认订单</h2></div>
 <div id="orderSummary"></div>
 <div id="payPanel" class="pay-panel hidden">
+<p class="pay-note2" style="color:#d93025;font-weight:700;">⚠️ 请确保店主实际收到 <span id="payNeedFull"></span> USDT：从交易所提币时手续费是另外扣的，请把手续费算进去、足额转出；少到账（比如只到 5.98）系统检测不到付款。</p>
 <p>请支付 <b id="payAmount" style="font-size:1.3rem;color:var(--accent)"></b></p>
 <img id="payQR" src="" alt="收款二维码" width="200" height="200">
 <p class="pay-addr" id="payAddr"></p>
@@ -105,7 +106,6 @@
 </div>
 <p class="status" id="payStatus"></p>
 <p class="pay-note2">请务必使用上方选择的网络转账，转错网络资产可能丢失。检测到付款后会自动显示成功。</p>
-<p class="pay-note2" style="color:#d93025;font-weight:700;">⚠️ 请确保店主实际收到 <span id="payNeedFull"></span> USDT：从交易所提币时手续费是另外扣的，请把手续费算进去、足额转出；少到账（比如只到 5.98）系统检测不到付款。</p>
 <button class="cancel-btn" id="cancelOrder">取消订单</button>
 </div>
 </section>
