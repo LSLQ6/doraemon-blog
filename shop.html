@@ -15,7 +15,9 @@
 .product .nm { font-weight:700; margin:0 0 6px; }
 .product .ds { color:var(--muted); font-size:.85rem; margin:0 0 10px; }
 .product .pr { font-weight:800; font-size:1.1rem; color:var(--accent); margin:0 0 4px; }
-.product .sold { color:var(--muted); font-size:.82rem; margin:0 0 10px; }
+.product .sold { color:var(--muted); font-size:.82rem; margin:0 0 4px; }
+.product .stk { color:#b3261e; font-size:.82rem; font-weight:700; margin:0 0 10px; }
+.product .stk.none { display:none; }
 .order-box { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px; margin:16px auto; max-width:520px; text-align:left; font-size:.9rem; }
 .order-box .rowline { display:flex; justify-content:space-between; gap:12px; padding:4px 0; }
 .order-box .rowline span:first-child { color:var(--muted); flex-shrink:0; }
@@ -258,6 +260,12 @@ function loadSold(){
   }).catch(function(){});
 }
 fetch("products.json").then(function(r){ return r.json(); }).then(function(d){ PRODUCTS=d; return loadSold(); }).then(function(){ render(); fillClaimProds(); }).catch(function(){ document.getElementById("emptyShop").classList.remove("hidden"); });
+function stockLeft(p){
+  if(p.stock === null || p.stock === undefined || p.stock === "") return null;
+  var s = Number(p.stock);
+  if(isNaN(s)) return null;
+  return Math.max(0, Math.floor(s) - (SOLD[p.id] || 0));
+}
 function render(){
   var g = document.getElementById("productGrid"); g.innerHTML="";
   var list = PRODUCTS;
@@ -266,12 +274,29 @@ function render(){
   document.getElementById("emptyShop").classList.add("hidden");
   list.forEach(function(p){
     var div=document.createElement("div"); div.className="product";
-    div.innerHTML = (p.image?'<img src="'+p.image+'" alt="" loading="lazy">':'') + '<div class="info"><p class="nm"></p><p class="ds"></p><p class="pr"></p><p class="sold"></p><button class="buy-btn">购买</button></div>';
+    div.innerHTML = (p.image?'<img src="'+p.image+'" alt="" loading="lazy">':'') + '<div class="info"><p class="nm"></p><p class="ds"></p><p class="pr"></p><p class="sold"></p><p class="stk none"></p><button class="buy-btn">购买</button></div>';
     div.querySelector(".nm").textContent=p.name;
     div.querySelector(".ds").textContent=p.desc||"";
     div.querySelector(".pr").textContent=p.price+" USDT";
     div.querySelector(".sold").textContent="已售出 "+(SOLD[p.id]||0)+" 件";
-    div.querySelector(".buy-btn").onclick=function(){ startOrder(p); };
+    var left = stockLeft(p);
+    var btn = div.querySelector(".buy-btn");
+    if(left !== null){
+      var stk = div.querySelector(".stk");
+      stk.classList.remove("none");
+      if(left <= 0){
+        stk.textContent = "已售罄";
+        btn.textContent = "已售罄";
+        btn.disabled = true;
+        btn.style.opacity = ".5";
+        btn.style.cursor = "not-allowed";
+      } else {
+        stk.textContent = "剩余 " + left + " 件";
+        btn.onclick = function(){ startOrder(p); };
+      }
+    } else {
+      btn.onclick = function(){ startOrder(p); };
+    }
     g.appendChild(div);
   });
 }
@@ -286,6 +311,8 @@ function rpc(url, method, params){
 }
 function stopOrder(){ if(orderTimer){ clearInterval(orderTimer); orderTimer=null; } order=null; }
 function startOrder(p){
+  var left0 = stockLeft(p);
+  if(left0 !== null && left0 <= 0){ alert("这个商品已经售罄了。"); return; }
   stopOrder();
   var s=document.getElementById("orderSummary");
   s.innerHTML='<div class="product" style="max-width:420px"><div class="info"><p class="nm"></p><p class="pr"></p></div></div>';
