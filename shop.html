@@ -105,6 +105,7 @@
 </div>
 <p class="status" id="payStatus"></p>
 <p class="pay-note2">请务必使用上方选择的网络转账，转错网络资产可能丢失。检测到付款后会自动显示成功。</p>
+<p class="pay-note2" style="color:#d93025;font-weight:700;">⚠️ 请确保店主实际收到 <span id="payNeedFull"></span> USDT：从交易所提币时手续费是另外扣的，请把手续费算进去、足额转出；少到账（比如只到 5.98）系统检测不到付款。</p>
 <button class="cancel-btn" id="cancelOrder">取消订单</button>
 </div>
 </section>
@@ -456,6 +457,7 @@ function startPayPanel(key,p,dbId){
   stopOrder();
   var net=NETS[key];
   document.getElementById("payAmount").textContent=fmtPrice(p.price)+"（"+p.price+" USDT）";
+  document.getElementById("payNeedFull").textContent=p.price;
   document.getElementById("payAddr").textContent=SELLER;
   document.getElementById("payQR").src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data="+SELLER;
   document.getElementById("payPanel").classList.remove("hidden");
