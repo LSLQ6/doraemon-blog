@@ -71,6 +71,7 @@ const orders = existsSync("orders.json") ? JSON.parse(readFileSync("orders.json"
 const cursor = existsSync(".order-sync.json") ? JSON.parse(readFileSync(".order-sync.json", "utf8")) : {};
 const known = new Set(orders.map(o => (o.chain + "|" + String(o.tx || o.id)).toLowerCase()));
 let added = 0;
+const newOnes = []; // 本次新增的已付款订单（用于邮件提醒）
 
 function addOrder(key, net, txRaw, valueRaw, timeMs, fromAddr) {
   const tx = (net.kind === "solana") ? String(txRaw) : String(txRaw).toLowerCase();
@@ -79,7 +80,7 @@ function addOrder(key, net, txRaw, valueRaw, timeMs, fromAddr) {
   const amount = fmtUnits(valueRaw, net.dec);
   const matches = products.filter(p => parseFloat(p.price) === parseFloat(amount));
   const p = matches.length === 1 ? matches[0] : null;
-  orders.unshift({
+  const one = {
     id: tx, tx: tx,
     productId: p ? p.id : null,
     productName: p ? p.name : "未知商品（" + amount + " USDT，待确认）",
@@ -87,7 +88,9 @@ function addOrder(key, net, txRaw, valueRaw, timeMs, fromAddr) {
     chain: key, chainLabel: net.label,
     from: fromAddr || "", time: fmtT(timeMs),
     status: "pending", auto: true
-  });
+  };
+  orders.unshift(one);
+  newOnes.push(one);
   known.add(id);
   added++;
   console.log("new order:", tx, amount, net.label, p ? p.name : "待确认");
@@ -196,3 +199,31 @@ for (const [key, net] of Object.entries(NETS)) {
 writeFileSync("orders.json", JSON.stringify(orders));
 writeFileSync(".order-sync.json", JSON.stringify(cursor));
 console.log("done, added " + added + " orders");
+
+// ===== 付款提醒邮件（Resend 免费版）：扫到新付款就通知店主发货 =====
+// 需要在 GitHub 仓库 Secrets 里设置 RESEND_API_KEY 和 NOTIFY_EMAIL；
+// 没设置就不发邮件，不影响同步流程。
+async function notifyNewOrders(list){
+  const apiKey = process.env.RESEND_API_KEY || "";
+  const to = process.env.NOTIFY_EMAIL || "";
+  if(!apiKey || !to || !list.length) return;
+  const lines = list.map(o =>
+    "• " + o.time + "｜" + o.chainLabel + "｜" + o.price + " USDT｜" + o.productName + "｜交易 " + String(o.tx).slice(0, 20) + "…"
+  ).join("\n");
+  try{
+    const r = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: "哆啦A梦小店 <onboarding@resend.dev>",
+        to: [to],
+        subject: "【待发货】收到 " + list.length + " 笔新的 USDT 付款",
+        text: "你的小店收到新的付款，请及时发货：\n\n" + lines +
+          "\n\n管理后台：https://lslq6.github.io/doraemon-blog/admin/"
+      })
+    });
+    const j = await r.json().catch(() => ({}));
+    console.log(r.ok ? ("提醒邮件已发送 " + (j.id || "")) : ("邮件发送失败: " + JSON.stringify(j).slice(0, 200)));
+  }catch(e){ console.log("邮件发送异常:", e.message); }
+}
+await notifyNewOrders(newOnes);
