@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>购物 · 祁萧远的博客</title>
+<meta name="description" content="USDT 收款">
+<link rel="stylesheet" href="styles.css?v=8">
+<style>
+.pay-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 22px; margin: 18px 0; text-align: center; }
+.pay-card h3 { margin: 0 0 12px; }
+.pay-addr { word-break: break-all; font-size: .85rem; color: var(--muted); background: var(--bg); border: 1px dashed var(--border); border-radius: 8px; padding: 10px; margin: 12px 0; }
+.copy-btn { border: 1px solid var(--border); background: var(--text); color: var(--bg); border-radius: 999px; padding: 8px 22px; cursor: pointer; font-size: .9rem; }
+.pay-note { color: var(--muted); font-size: .85rem; }
+</style>
+</head>
+<body>
+<header class="site-header">
+<div class="wrap header-inner">
+<span class="brand-row"><img src="logo.png" class="brand-logo" alt=""><a class="brand" href="index.html">祁萧远的博客</a></span>
+<nav class="main-nav">
+<a href="index.html">文章</a>
+<a href="pay.html">购物</a>
+</nav>
+</div>
+</header>
+<main class="wrap">
+<div class="section-head"><h2>购物 · USDT 支付</h2></div>
+<p class="pay-note">选好商品后，使用下面的地址支付 USDT。转账前请务必确认选择了对应的网络，转错网络资产可能丢失。付款后请通过博客留言或邮件联系我确认订单。</p>
+<div class="pay-card">
+<h3>BSC（BEP20）</h3>
+<img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=0x5a93d426357cfc7b83d27cec9d4776b05fc73149" alt="BSC 收款二维码" width="220" height="220">
+<p class="pay-addr" id="addr-bsc">0x5a93d426357cfc7b83d27cec9d4776b05fc73149</p>
+<button class="copy-btn" data-copy="addr-bsc">复制地址</button>
+</div>
+<div class="pay-card">
+<h3>Arbitrum One（USDT0）</h3>
+<img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=0x5a93d426357cfc7b83d27cec9d4776b05fc73149" alt="Arbitrum 收款二维码" width="220" height="220">
+<p class="pay-addr" id="addr-arb">0x5a93d426357cfc7b83d27cec9d4776b05fc73149</p>
+<button class="copy-btn" data-copy="addr-arb">复制地址</button>
+</div>
+</main>
+<footer class="site-footer"><div class="wrap"><p class="footer-line">© <span id="year"></span></p></div></footer>
+<script>
+document.getElementById("year").textContent = new Date().getFullYear();
+document.querySelectorAll("[data-copy]").forEach(function(btn) {
+  btn.addEventListener("click", function() {
+    var t = document.getElementById(btn.getAttribute("data-copy")).textContent.trim();
+    function done() { btn.textContent = "已复制 ✓"; setTimeout(function(){ btn.textContent = "复制地址"; }, 1500); }
+    if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(t).then(done).catch(function(){ fallback(); }); }
+    else { fallback(); }
+    function fallback() { var ta = document.createElement("textarea"); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); } catch(e){} ta.remove(); done(); }
+  });
+});
+</script>
+</body>
+</html>
