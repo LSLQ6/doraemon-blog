@@ -77,6 +77,8 @@ select.psel { padding:8px 10px; font-size:.9rem; border:1px solid var(--border);
 .scanrow button { flex-shrink:0; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.css">
+<script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -131,6 +133,24 @@ select.psel { padding:8px 10px; font-size:.9rem; border:1px solid var(--border);
 <div id="orderList"></div>
 <label>月度统计</label>
 <div id="statBox"><div class="empty">加载订单后自动统计</div></div>
+</div>
+</div>
+
+<div id="cropModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:999;align-items:center;justify-content:center;padding:16px">
+<div style="background:#fff;border-radius:12px;max-width:540px;width:100%;padding:16px;max-height:92vh;overflow:auto">
+<div style="font-weight:700;margin-bottom:8px">裁剪图片</div>
+<div><img id="cropImg" style="max-width:100%;display:block;max-height:55vh"></div>
+<div style="display:flex;gap:8px;margin:10px 0;flex-wrap:wrap">
+<button type="button" class="mini" data-ratio="">自由</button>
+<button type="button" class="mini" data-ratio="1">1:1</button>
+<button type="button" class="mini" data-ratio="1.3333">4:3</button>
+<button type="button" class="mini" data-ratio="1.7778">16:9</button>
+</div>
+<p class="hint">拖动选框选择要保留的内容，可双指/滚轮缩放图片。选好后点“裁剪并上传”。</p>
+<div style="display:flex;gap:10px;margin-top:10px">
+<button type="button" class="mini" id="cropCancel" style="flex:1;background:#6b6b6b">取消</button>
+<button type="button" class="mini green" id="cropConfirm" style="flex:1">裁剪并上传</button>
+</div>
 </div>
 </div>
 
@@ -303,37 +323,63 @@ async function deletePost(p, btn) {
   }
 }
 
-/* ===== 商品图片上传：选手机照片 → 传到 GitHub 仓库 → 自动填网址 ===== */
+/* ===== 商品图片上传：选手机照片 → 自己裁剪 → 传到 GitHub 仓库 → 自动填网址 ===== */
+let cropper = null, cropObjUrl = null, pendingCropFile = null;
 $("uploadImgBtn").onclick = () => $("pImgFile").click();
-$("pImgFile").onchange = async (e) => {
+$("pImgFile").onchange = (e) => {
   const file = e.target.files && e.target.files[0];
   if (!file) return;
   const token = $("token").value.trim();
+  if (!token) { $("imgUploadStatus").textContent = "请先填写上方 GitHub 访问令牌。"; $("pImgFile").value = ""; return; }
+  if (!file.type.startsWith("image/")) { $("imgUploadStatus").textContent = "请选择图片文件。"; $("pImgFile").value = ""; return; }
+  if (file.size > 15 * 1024 * 1024) { $("imgUploadStatus").textContent = "图片太大（超过15MB），请换一张小一点的。"; $("pImgFile").value = ""; return; }
+  if (!window.Cropper) { directUploadFallback(file); return; }
+  pendingCropFile = file;
+  openCropper(file);
+};
+function openCropper(file) {
+  if (cropObjUrl) URL.revokeObjectURL(cropObjUrl);
+  cropObjUrl = URL.createObjectURL(file);
+  const img = $("cropImg");
+  if (cropper) { cropper.destroy(); cropper = null; }
+  img.src = cropObjUrl;
+  $("cropModal").style.display = "flex";
+  img.onload = () => {
+    if (cropper) cropper.destroy();
+    cropper = new Cropper(img, { viewMode: 1, autoCropArea: 0.9, movable: true, zoomable: true, scalable: true });
+  };
+}
+document.querySelectorAll("#cropModal [data-ratio]").forEach(b => {
+  b.onclick = () => {
+    if (!cropper) return;
+    const r = b.getAttribute("data-ratio");
+    cropper.setAspectRatio(r === "" ? NaN : parseFloat(r));
+  };
+});
+$("cropCancel").onclick = () => {
+  $("cropModal").style.display = "none";
+  if (cropper) { cropper.destroy(); cropper = null; }
+  $("pImgFile").value = "";
+};
+$("cropConfirm").onclick = async () => {
+  const token = $("token").value.trim();
   if (!token) { $("imgUploadStatus").textContent = "请先填写上方 GitHub 访问令牌。"; return; }
-  if (!file.type.startsWith("image/")) { $("imgUploadStatus").textContent = "请选择图片文件。"; return; }
-  if (file.size > 15 * 1024 * 1024) { $("imgUploadStatus").textContent = "图片太大（超过15MB），请换一张小一点的。"; return; }
+  $("cropModal").style.display = "none";
   const btn = $("uploadImgBtn");
   btn.disabled = true;
   $("imgUploadStatus").textContent = "正在上传…";
   try {
-    const blob = await compressImage(file);
-    const base64 = await blobToBase64(blob);
-    const ext = (blob.type.includes("png") ? "png" : blob.type.includes("webp") ? "webp" : "jpg");
-    const fname = Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8) + "." + ext;
-    const path = "images/products/" + fname;
-    await gh(path, token, "PUT", {
-      message: "上传商品图片 " + fname,
-      content: base64,
-      branch: BRANCH
-    });
-    const url = "https://lslq6.github.io/doraemon-blog/" + path;
-    $("pImg").value = url;
-    $("imgUploadStatus").textContent = "上传成功，已自动填入链接 ✅";
-    $("pImgPreview").innerHTML = "";
-    const img = document.createElement("img");
-    img.src = url;
-    img.style.cssText = "max-width:160px;max-height:160px;border-radius:8px;border:1px solid var(--border)";
-    $("pImgPreview").appendChild(img);
+    let blob;
+    if (cropper) {
+      const canvas = cropper.getCroppedCanvas({ maxWidth: 1600, maxHeight: 1600, fillColor: "#fff" });
+      blob = await new Promise((res, rej) => canvas.toBlob(b => b ? res(b) : rej(new Error("图片处理失败")), "image/jpeg", 0.82));
+      cropper.destroy(); cropper = null;
+    } else if (pendingCropFile) {
+      blob = await compressImage(pendingCropFile);
+    } else {
+      throw new Error("没有可上传的图片");
+    }
+    await uploadImageBlob(blob, token);
   } catch (err) {
     $("imgUploadStatus").textContent = "上传失败：" + err.message;
   } finally {
@@ -341,6 +387,40 @@ $("pImgFile").onchange = async (e) => {
     $("pImgFile").value = "";
   }
 };
+async function directUploadFallback(file) {
+  const token = $("token").value.trim();
+  const btn = $("uploadImgBtn");
+  btn.disabled = true;
+  $("imgUploadStatus").textContent = "正在上传…";
+  try {
+    const blob = await compressImage(file);
+    await uploadImageBlob(blob, token);
+  } catch (err) {
+    $("imgUploadStatus").textContent = "上传失败：" + err.message;
+  } finally {
+    btn.disabled = false;
+    $("pImgFile").value = "";
+  }
+}
+async function uploadImageBlob(blob, token) {
+  const base64 = await blobToBase64(blob);
+  const ext = (blob.type.includes("png") ? "png" : blob.type.includes("webp") ? "webp" : "jpg");
+  const fname = Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8) + "." + ext;
+  const path = "images/products/" + fname;
+  await gh(path, token, "PUT", {
+    message: "上传商品图片 " + fname,
+    content: base64,
+    branch: BRANCH
+  });
+  const url = "https://lslq6.github.io/doraemon-blog/" + path;
+  $("pImg").value = url;
+  $("imgUploadStatus").textContent = "上传成功，已自动填入链接 ✅";
+  $("pImgPreview").innerHTML = "";
+  const img = document.createElement("img");
+  img.src = url;
+  img.style.cssText = "max-width:160px;max-height:160px;border-radius:8px;border:1px solid var(--border)";
+  $("pImgPreview").appendChild(img);
+}
 function compressImage(file) {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
