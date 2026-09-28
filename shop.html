@@ -13,7 +13,14 @@
 .product .info { padding:14px 16px; }
 .product .nm { font-weight:700; margin:0 0 6px; }
 .product .ds { color:var(--muted); font-size:.85rem; margin:0 0 10px; }
-.product .pr { font-weight:800; font-size:1.1rem; color:var(--accent); margin:0 0 10px; }
+.product .pr { font-weight:800; font-size:1.1rem; color:var(--accent); margin:0 0 4px; }
+.product .sold { color:var(--muted); font-size:.82rem; margin:0 0 10px; }
+.order-box { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px; margin:16px auto; max-width:520px; text-align:left; font-size:.9rem; }
+.order-box .rowline { display:flex; justify-content:space-between; gap:12px; padding:4px 0; }
+.order-box .rowline span:first-child { color:var(--muted); flex-shrink:0; }
+.order-box .rowline span:last-child { word-break:break-all; text-align:right; }
+.ostatus { font-size:1.05rem; font-weight:700; margin:14px 0 4px; }
+.orefresh { color:var(--muted); font-size:.8rem; }
 .buy-btn { width:100%; padding:10px; border:none; border-radius:8px; background:var(--text); color:var(--bg); font-size:.95rem; font-weight:600; cursor:pointer; }
 .net-btns { display:flex; gap:10px; margin:14px 0; }
 .net-btns button { flex:1; padding:12px; border:1px solid var(--border); border-radius:10px; background:var(--card); color:var(--text); font-size:.95rem; font-weight:600; cursor:pointer; }
@@ -75,7 +82,9 @@
 <div class="success">
 <div class="tick">✅</div>
 <h2>支付成功！</h2>
-<p id="txLine" style="word-break:break-all;font-size:.85rem;color:var(--muted)"></p>
+<p id="orderStatusLine" class="ostatus"></p>
+<div class="order-box" id="orderBox"></div>
+<p class="orefresh">订单状态由店主在后台更新，本页面每分钟自动刷新，无需重复付款。</p>
 <p><a class="back" href="#" id="backToList2">← 返回商品列表</a></p>
 </div>
 </section>
@@ -91,18 +100,30 @@ var NETS = {
 };
 var TO_TOPIC = "0x000000000000000000000000" + SELLER.slice(2).toLowerCase();
 var PRODUCTS = [];
+var ORDERS = [];
+var SOLD = {};
 var orderTimer = null, order = null;
+var statusTimer = null, paidOrder = null;
+var OSTATUSTXT = { pending:"⏳ 等待发货", shipped:"📦 卖家已发货", completed:"🎉 订单已完成" };
 function show(id){ ["view-list","view-order","view-success"].forEach(function(v){ document.getElementById(v).classList.toggle("hidden", v!==id); }); window.scrollTo(0,0); }
-fetch("products.json").then(function(r){ return r.json(); }).then(function(d){ PRODUCTS=d; render(); }).catch(function(){ document.getElementById("emptyShop").classList.remove("hidden"); });
+function loadOrders(){
+  return fetch("orders.json?t="+Date.now()).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(d){
+    ORDERS = Array.isArray(d)?d:[];
+    SOLD = {};
+    ORDERS.forEach(function(o){ if(o.productId){ SOLD[o.productId]=(SOLD[o.productId]||0)+1; } });
+  }).catch(function(){ ORDERS=[]; SOLD={}; });
+}
+fetch("products.json").then(function(r){ return r.json(); }).then(function(d){ PRODUCTS=d; return loadOrders(); }).then(function(){ render(); }).catch(function(){ document.getElementById("emptyShop").classList.remove("hidden"); });
 function render(){
   var g = document.getElementById("productGrid"); g.innerHTML="";
   if(!PRODUCTS.length){ document.getElementById("emptyShop").classList.remove("hidden"); return; }
   PRODUCTS.forEach(function(p){
     var div=document.createElement("div"); div.className="product";
-    div.innerHTML = (p.image?'<img src="'+p.image+'" alt="" loading="lazy">':'') + '<div class="info"><p class="nm"></p><p class="ds"></p><p class="pr"></p><button class="buy-btn">购买</button></div>';
+    div.innerHTML = (p.image?'<img src="'+p.image+'" alt="" loading="lazy">':'') + '<div class="info"><p class="nm"></p><p class="ds"></p><p class="pr"></p><p class="sold"></p><button class="buy-btn">购买</button></div>';
     div.querySelector(".nm").textContent=p.name;
     div.querySelector(".ds").textContent=p.desc||"";
     div.querySelector(".pr").textContent=p.price+" USDT";
+    div.querySelector(".sold").textContent="已售出 "+(SOLD[p.id]||0)+" 件";
     div.querySelector(".buy-btn").onclick=function(){ startOrder(p); };
     g.appendChild(div);
   });
@@ -142,7 +163,7 @@ function chooseNet(key,p){
   document.getElementById("payPanel").classList.remove("hidden");
   setStatus("正在连接网络…");
   rpc(net.rpc,"eth_blockNumber",[]).then(function(blk){
-    order={key:key,net:net,need:toUnits(p.price,net.dec),from:blk,errs:0,deadline:Date.now()+30*60*1000};
+    order={key:key,net:net,prod:p,need:toUnits(p.price,net.dec),from:blk,errs:0,deadline:Date.now()+30*60*1000};
     setStatus('<span class="spin">⏳</span> 等待付款…（每 15 秒自动检测一次）');
     poll();
     orderTimer=setInterval(poll,15000);
@@ -164,9 +185,37 @@ function poll(){
   });
 }
 function onPaid(tx){
-  var net=order.net; stopOrder(); show("view-success");
-  document.getElementById("txLine").innerHTML='交易哈希：<a href="'+net.scan+tx+'" target="_blank" rel="noopener">'+tx+'</a><br>付款成功！请截图保存，并联系店主确认发货。';
+  var net=order.net, prod=order.prod; stopOrder(); show("view-success");
+  paidOrder={ tx:tx.toLowerCase(), net:net, name:prod.name, price:prod.price, time:new Date().toLocaleString("zh-CN",{hour12:false}) };
+  var box=document.getElementById("orderBox");
+  function row(k,v){ var d=document.createElement("div"); d.className="rowline"; var a=document.createElement("span"); a.textContent=k; var b=document.createElement("span"); b.textContent=v; d.appendChild(a); d.appendChild(b); return d; }
+  box.innerHTML="";
+  box.appendChild(row("商品", paidOrder.name));
+  box.appendChild(row("金额", paidOrder.price+" USDT（"+net.label+"）"));
+  box.appendChild(row("付款时间", paidOrder.time));
+  var txrow=document.createElement("div"); txrow.className="rowline";
+  var ka=document.createElement("span"); ka.textContent="交易哈希";
+  var va=document.createElement("span"); var link=document.createElement("a"); link.href=net.scan+tx; link.target="_blank"; link.rel="noopener"; link.textContent=tx.slice(0,10)+"…"+tx.slice(-8); link.style.color="var(--link)"; va.appendChild(link);
+  txrow.appendChild(ka); txrow.appendChild(va); box.appendChild(txrow);
+  setOrderStatus("pending");
+  refreshOrderStatus();
+  if(statusTimer) clearInterval(statusTimer);
+  statusTimer=setInterval(refreshOrderStatus, 60000);
 }
+function setOrderStatus(st){
+  var el=document.getElementById("orderStatusLine");
+  el.textContent=OSTATUSTXT[st]||OSTATUSTXT.pending;
+}
+function refreshOrderStatus(){
+  if(!paidOrder) return;
+  loadOrders().then(function(){
+    for(var i=0;i<ORDERS.length;i++){
+      if(String(ORDERS[i].tx||ORDERS[i].id||"").toLowerCase()===paidOrder.tx){ setOrderStatus(ORDERS[i].status||"pending"); return; }
+    }
+    setOrderStatus("pending");
+  });
+}
+function stopStatus(){ if(statusTimer){ clearInterval(statusTimer); statusTimer=null; } paidOrder=null; }
 document.getElementById("checkBtn").onclick=function(){ if(order) poll(); else setStatus("请先选择支付网络。"); };
 document.getElementById("copyAddrBtn").onclick=function(){
   var t=SELLER, btn=this;
@@ -174,7 +223,7 @@ document.getElementById("copyAddrBtn").onclick=function(){
   function fallback(){ var ta=document.createElement("textarea"); ta.value=t; document.body.appendChild(ta); ta.select(); try{ document.execCommand("copy"); }catch(e){} ta.remove(); done(); }
   if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(done).catch(fallback); } else fallback();
 };
-function backList(e){ if(e) e.preventDefault(); stopOrder(); show("view-list"); }
+function backList(e){ if(e) e.preventDefault(); stopOrder(); stopStatus(); show("view-list"); }
 document.getElementById("backToList").onclick=backList;
 document.getElementById("backToList2").onclick=backList;
 document.getElementById("cancelOrder").onclick=function(){ backList(); };
