@@ -47,6 +47,7 @@
 .ord .d { color:var(--muted); font-size:.82rem; margin-top:4px; word-break:break-all; }
 .obadge { display:inline-block; font-size:.75rem; border-radius:999px; padding:2px 10px; margin-left:6px; }
 .obadge.pending { background:#fff3cd; color:#856404; }
+.obadge.unpaid { background:#e9ecef; color:#495057; }
 .obadge.shipped { background:#d1ecf1; color:#0c5460; }
 .obadge.completed { background:#d4edda; color:#155724; }
 .claim-input { width:100%; padding:10px 12px; font-size:.9rem; border:1px solid var(--border); border-radius:8px; box-sizing:border-box; background:var(--bg); color:var(--text); margin:6px 0; }
@@ -147,7 +148,7 @@ document.getElementById("year").textContent = new Date().getFullYear();
 var SB_URL = "https://vvwyheyojnmeyzbisxnq.supabase.co";
 var SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ2d3loZXlvam5tZXl6YmlzeG5xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MTE0MTQsImV4cCI6MjEwNjE4NzQxNH0.U2ZMJZbgm-5cxP7M383ymjX22UW9ZuvtgU8owXV8oR8";
 var sb = (window.supabase ? window.supabase.createClient(SB_URL, SB_KEY) : null);
-var myUser = null, pendingBuy = null, authMode = "login";
+var myUser = null, pendingNet = null, authMode = "login";
 var SELLER = "0x5a93d426357cfc7b83d27cec9d4776b05fc73149";
 var TRANSFER = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 var NETS = {
@@ -160,7 +161,7 @@ var SOLD = {};
 var orderTimer = null, order = null;
 var statusTimer = null, paidOrder = null, paidOrderId = null;
 var OSTATUSTXT = { pending:"⏳ 等待发货", shipped:"📦 卖家已发货", completed:"🎉 订单已完成" };
-var OSTATUS_BADGE = { pending:"待发货", shipped:"已发货", completed:"订单已完成" };
+var OSTATUS_BADGE = { unpaid:"待支付", pending:"待发货", shipped:"已发货", completed:"订单已完成" };
 var searchKw = "";
 /* ===== 登录 / 注册 ===== */
 function renderAuthArea(){
@@ -223,7 +224,7 @@ async function refreshAuth(){
   }catch(e){ myUser = null; }
   renderAuthArea();
 }
-if(sb){ sb.auth.onAuthStateChange(function(){ refreshAuth().then(function(){ if(myUser && pendingBuy){ var p = pendingBuy; pendingBuy = null; closeAuth(); startOrder(p); } }); }); refreshAuth(); }
+if(sb){ sb.auth.onAuthStateChange(function(){ refreshAuth().then(function(){ if(myUser && pendingNet){ var n = pendingNet; pendingNet = null; closeAuth(); chooseNet(n.key, n.p); } }); }); refreshAuth(); }
 /* ===== 搜索 & 主题 ===== */
 document.getElementById("searchToggle").onclick = function(){
   var bar = document.getElementById("searchBar");
@@ -285,7 +286,6 @@ function rpc(url, method, params){
 }
 function stopOrder(){ if(orderTimer){ clearInterval(orderTimer); orderTimer=null; } order=null; }
 function startOrder(p){
-  if(!myUser){ pendingBuy = p; openAuth("购买需要先登录 / 注册，浏览商品不用登录。"); return; }
   stopOrder();
   var s=document.getElementById("orderSummary");
   s.innerHTML='<div class="product" style="max-width:420px"><div class="info"><p class="nm"></p><p class="pr"></p></div></div>';
@@ -300,6 +300,11 @@ function startOrder(p){
 }
 function setStatus(html){ document.getElementById("payStatus").innerHTML=html; }
 function chooseNet(key,p){
+  if(!myUser){ pendingNet = { key:key, p:p }; openAuth("进入付款需要先登录 / 注册，浏览商品不用登录。"); return; }
+  var dbIdP = sb.from("orders").insert({ user_id: myUser.id, product_id: p.id, product_name: p.name, price: p.price, chain: key, status: "unpaid" }).select("id").then(function(r){ return (r.data && r.data[0]) ? r.data[0].id : null; }).catch(function(){ return null; });
+  dbIdP.then(function(dbId){ startPayPanel(key, p, dbId); });
+}
+function startPayPanel(key,p,dbId){
   stopOrder();
   var net=NETS[key];
   document.getElementById("netBsc").classList.toggle("sel",key==="bsc");
@@ -310,11 +315,34 @@ function chooseNet(key,p){
   document.getElementById("payPanel").classList.remove("hidden");
   setStatus("正在连接网络…");
   rpc(net.rpc,"eth_blockNumber",[]).then(function(blk){
-    order={key:key,net:net,prod:p,need:toUnits(p.price,net.dec),from:blk,errs:0,deadline:Date.now()+30*60*1000};
+    order={key:key,net:net,prod:p,dbId:dbId,need:toUnits(p.price,net.dec),from:blk,errs:0,deadline:Date.now()+30*60*1000};
     setStatus('<span class="spin">⏳</span> 等待付款…（每 15 秒自动检测一次）');
     poll();
     orderTimer=setInterval(poll,15000);
   }).catch(function(){ setStatus("网络连接失败，请检查网络后点「我已付款，立即检测」重试。"); });
+}
+function shortId(id){ return id ? String(id).replace(/-/g,"").slice(0,8).toUpperCase() : ""; }
+function resumePay(o){
+  var p = null;
+  PRODUCTS.forEach(function(pp){ if(pp.id === o.product_id) p = pp; });
+  if(!p) p = { id: o.product_id, name: o.product_name, price: o.price };
+  stopOrder(); stopStatus();
+  var s=document.getElementById("orderSummary");
+  s.innerHTML='<div class="product" style="max-width:420px"><div class="info"><p class="nm"></p><p class="pr"></p></div></div>';
+  s.querySelector(".nm").textContent=p.name;
+  s.querySelector(".pr").textContent=p.price+" USDT";
+  document.getElementById("payPanel").classList.add("hidden");
+  document.getElementById("netBsc").classList.remove("sel");
+  document.getElementById("netArb").classList.remove("sel");
+  document.getElementById("netBsc").onclick=function(){ chooseNet("bsc",p); };
+  document.getElementById("netArb").onclick=function(){ chooseNet("arb",p); };
+  show("view-order");
+  startPayPanel(o.chain, p, o.id);
+}
+function cancelOrder(id){
+  if(!sb || !id) return;
+  if(!confirm("确定取消这笔待支付订单吗？")) return;
+  sb.from("orders").delete().eq("id", id).then(function(){ loadMyOrders(); }).catch(function(){ loadMyOrders(); });
 }
 function poll(){
   if(!order) return;
@@ -322,7 +350,7 @@ function poll(){
   rpc(order.net.rpc,"eth_blockNumber",[]).then(function(latest){
     return rpc(order.net.rpc,"eth_getLogs",[{fromBlock:order.from,toBlock:latest,address:order.net.token,topics:[TRANSFER,null,TO_TOPIC]}]).then(function(logs){
       order.from=latest; order.errs=0;
-      for(var i=0;i<logs.length;i++){ if(BigInt(logs[i].data)>=order.need){ onPaid(logs[i].transactionHash); return; } }
+      for(var i=0;i<logs.length;i++){ var h=String(logs[i].transactionHash).toLowerCase(); if(order.lastTry && h===order.lastTry) continue; if(BigInt(logs[i].data)>=order.need){ onPaid(logs[i].transactionHash); return; } }
       setStatus('<span class="spin">⏳</span> 等待付款…（每 15 秒自动检测一次）');
     });
   }).catch(function(){
@@ -332,26 +360,50 @@ function poll(){
   });
 }
 function onPaid(tx){
-  var key=order.key, net=order.net, prod=order.prod; stopOrder(); show("view-success");
-  paidOrder={ tx:tx.toLowerCase(), net:net, name:prod.name, price:prod.price, time:new Date().toLocaleString("zh-CN",{hour12:false}) };
-  paidOrderId = null;
+  var key=order.key, net=order.net, prod=order.prod, dbId=order.dbId;
+  var txl=tx.toLowerCase();
+  order.lastTry=txl;
+  if(!sb || !myUser){ stopOrder(); setStatus("登录已失效，请重新登录后再点「我已付款，立即检测」。"); return; }
+  setStatus('<span class="spin">⏳</span> 已检测到付款，正在登记订单…');
+  var job;
+  if(dbId){
+    job = sb.from("orders").update({ tx: txl, status: "pending" }).eq("id", dbId).select("id").then(function(r){ if(r.error) throw r.error; return dbId; });
+  } else {
+    job = sb.from("orders").insert({ user_id: myUser.id, product_id: prod.id, product_name: prod.name, price: prod.price, chain: key, tx: txl, status: "pending" }).select("id").then(function(r){
+      if(r.error) throw r.error;
+      if(r.data && r.data[0]) return r.data[0].id;
+      return sb.from("orders").select("id").eq("user_id", myUser.id).eq("tx", txl).limit(1).then(function(r2){ return (r2.data && r2.data[0]) ? r2.data[0].id : null; });
+    });
+  }
+  job.then(function(id){
+    showPaidSuccess(txl, key, net, prod, id);
+  }).catch(function(e){
+    if(e && (e.code === "23505" || String(e.message || "").indexOf("duplicate") >= 0)){
+      sb.from("orders").select("id").eq("user_id", myUser.id).eq("tx", txl).limit(1).then(function(r2){
+        var id = (r2.data && r2.data[0]) ? r2.data[0].id : null;
+        showPaidSuccess(txl, key, net, prod, id);
+      });
+    } else {
+      setStatus("订单登记失败：" + (e.message || e) + "。请点「我已付款，立即检测」重试。");
+    }
+  });
+}
+function showPaidSuccess(txl, key, net, prod, orderId){
+  stopOrder(); show("view-success");
+  paidOrder={ tx:txl, net:net, name:prod.name, price:prod.price, time:new Date().toLocaleString("zh-CN",{hour12:false}) };
+  paidOrderId = orderId;
   var box=document.getElementById("orderBox");
   function row(k,v){ var d=document.createElement("div"); d.className="rowline"; var a=document.createElement("span"); a.textContent=k; var b=document.createElement("span"); b.textContent=v; d.appendChild(a); d.appendChild(b); return d; }
   box.innerHTML="";
+  box.appendChild(row("订单号", shortId(orderId)));
   box.appendChild(row("商品", paidOrder.name));
   box.appendChild(row("金额", paidOrder.price+" USDT（"+net.label+"）"));
   box.appendChild(row("付款时间", paidOrder.time));
   var txrow=document.createElement("div"); txrow.className="rowline";
   var ka=document.createElement("span"); ka.textContent="交易哈希";
-  var va=document.createElement("span"); var link=document.createElement("a"); link.href=net.scan+tx; link.target="_blank"; link.rel="noopener"; link.textContent=tx.slice(0,10)+"…"+tx.slice(-8); link.style.color="var(--link)"; va.appendChild(link);
+  var va=document.createElement("span"); var link=document.createElement("a"); link.href=net.scan+txl; link.target="_blank"; link.rel="noopener"; link.textContent=txl.slice(0,10)+"…"+txl.slice(-8); link.style.color="var(--link)"; va.appendChild(link);
   txrow.appendChild(ka); txrow.appendChild(va); box.appendChild(txrow);
   setOrderStatus("pending");
-  if(sb && myUser){
-    sb.from("orders").insert({ user_id: myUser.id, product_id: prod.id, product_name: prod.name, price: prod.price, chain: key, tx: tx.toLowerCase(), status: "pending" }).select("id").then(function(r){
-      if(r.data && r.data[0]){ paidOrderId = r.data[0].id; }
-      else { sb.from("orders").select("id").eq("user_id", myUser.id).eq("tx", tx.toLowerCase()).limit(1).then(function(r2){ if(r2.data && r2.data[0]) paidOrderId = r2.data[0].id; }); }
-    });
-  }
   refreshOrderStatus();
   if(statusTimer) clearInterval(statusTimer);
   statusTimer=setInterval(refreshOrderStatus, 60000);
@@ -383,9 +435,19 @@ function loadMyOrders(){
       var d = document.createElement("div"); d.className = "d";
       var net = NETS[o.chain] || {};
       d.innerHTML = "";
-      d.appendChild(document.createTextNode(fmtTime(o.created_at) + " · " + (net.label || o.chain || "") + " · "));
+      d.appendChild(document.createTextNode("订单号 " + shortId(o.id) + " · " + fmtTime(o.created_at) + " · " + (net.label || o.chain || "") + " · "));
       if(o.tx && net.scan){ var a=document.createElement("a"); a.href=net.scan+o.tx; a.target="_blank"; a.rel="noopener"; a.style.color="var(--link)"; a.textContent="交易 "+String(o.tx).slice(0,10)+"…"; d.appendChild(a); }
-      div.appendChild(t); div.appendChild(d); box.appendChild(div);
+      div.appendChild(t); div.appendChild(d);
+      if((o.status || "") === "unpaid"){
+        var ops = document.createElement("div"); ops.style.marginTop = "8px"; ops.style.display = "flex"; ops.style.gap = "8px";
+        var go = document.createElement("button"); go.className = "check-btn"; go.style.fontSize = ".82rem"; go.style.padding = "6px 18px"; go.textContent = "去支付";
+        go.onclick = function(){ resumePay(o); };
+        var cancel = document.createElement("button"); cancel.className = "textbtn"; cancel.textContent = "取消订单";
+        cancel.onclick = function(){ cancelOrder(o.id); };
+        ops.appendChild(go); ops.appendChild(cancel);
+        div.appendChild(ops);
+      }
+      box.appendChild(div);
     });
   });
 }
@@ -430,7 +492,10 @@ document.getElementById("claimBtn").onclick = function(){
     if(!ok) throw { claimMsg: "核验失败：这笔交易里没有给店主地址转 " + prod.price + " USDT 的记录。" };
     return sb.from("orders").insert({ user_id: myUser.id, product_id: prod.id, product_name: prod.name, price: prod.price, chain: claimNet, tx: tx, status: "pending" });
   }).then(function(ins){
-    if(ins.error) throw { claimMsg: "登记失败：" + ins.error.message };
+    if(ins.error){
+      if(ins.error.code === "23505") throw { claimMsg: "这笔交易已经被登记过了（一笔交易只能绑定一个账号），无需重复补登。" };
+      throw { claimMsg: "登记失败：" + ins.error.message };
+    }
     setClaim("补登成功！订单状态为「待发货」。");
     document.getElementById("claimTx").value = "";
     loadMyOrders(); loadSold().then(render);
@@ -449,7 +514,13 @@ function backList(e){ if(e) e.preventDefault(); stopOrder(); stopStatus(); show(
 document.getElementById("backToList").onclick=backList;
 document.getElementById("backToList2").onclick=backList;
 document.getElementById("backToList3").onclick=backList;
-document.getElementById("cancelOrder").onclick=function(){ backList(); };
+document.getElementById("cancelOrder").onclick=function(){
+  var dbId = order && order.dbId;
+  if(dbId && sb && myUser){
+    if(!confirm("确定取消这笔待支付订单吗？")) return;
+    sb.from("orders").delete().eq("id", dbId).then(function(){ backList(); }).catch(function(){ backList(); });
+  } else backList();
+};
 </script>
 <div id="gateModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999;">
   <div style="background:#fff;border-radius:14px;padding:26px 24px;width:300px;text-align:center;color:#1a1a1a;">
