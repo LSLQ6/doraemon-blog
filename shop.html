@@ -354,7 +354,10 @@ function resumePay(o){
 function cancelOrder(id){
   if(!sb || !id) return;
   if(!confirm("确定取消这笔待支付订单吗？")) return;
-  sb.from("orders").delete().eq("id", id).then(function(){ loadMyOrders(); }).catch(function(){ loadMyOrders(); });
+  sb.from("orders").delete().eq("id", id).then(function(r){
+    if(r.error){ alert("取消失败：" + r.error.message); }
+    loadMyOrders();
+  }).catch(function(e){ alert("取消失败：" + (e.message || e)); loadMyOrders(); });
 }
 function poll(){
   if(!order) return;
