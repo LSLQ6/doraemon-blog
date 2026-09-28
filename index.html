@@ -7,6 +7,15 @@
 <title>祁萧远的博客</title>
 <meta name="description" content="生活、阅读与v=4思考。把稍纵即逝的念头，整理成可以慢慢阅读的文字。">
 <link rel="stylesheet" href="styles.css?v=8">
+<style>
+.umenu-wrap { position:relative; }
+.umenu { position:absolute; right:0; top:calc(100% + 10px); background:var(--card,#fff); border:1px solid var(--border,#e5e5e5); border-radius:12px; min-width:170px; box-shadow:0 10px 30px rgba(0,0,0,.14); z-index:200; overflow:hidden; }
+.umenu .uemail { padding:10px 14px; font-size:.78rem; color:var(--muted,#6b6b6b); border-bottom:1px solid var(--border,#e5e5e5); word-break:break-all; }
+.umenu button { display:block; width:100%; text-align:left; padding:11px 14px; background:none; border:none; font-size:.92rem; color:var(--text,#1a1a1a); cursor:pointer; }
+.umenu button:hover { background:rgba(128,128,128,.12); }
+.umenu button + button { border-top:1px solid var(--border,#e5e5e5); }
+.auth-input { width:100%; padding:10px 12px; font-size:1rem; border:1px solid #ddd; border-radius:8px; box-sizing:border-box; margin:6px 0; }
+</style>
 </head>
 <body>
 <header class="site-header">
@@ -16,6 +25,10 @@
       <a href="#" data-nav="home">文章</a> <a href="shop.html">购物</a>
       <button class="icon-btn" id="searchToggle" aria-label="搜索">🔍</button>
       <button class="icon-btn" id="themeToggle" aria-label="切换深色模式">🌙</button>
+      <div class="umenu-wrap">
+        <button class="icon-btn" id="userBtn" aria-label="用户菜单">👤</button>
+        <div class="umenu hidden" id="userMenu"></div>
+      </div>
     </nav>
   </div>
   <div class="wrap search-bar hidden" id="searchBar">
@@ -96,6 +109,100 @@
   document.getElementById("gateCancel").onclick = closeGate;
   input.addEventListener("keydown", function(e){ if(e.key === "Enter") tryEnter(); });
   modal.addEventListener("click", function(e){ if(e.target === modal) closeGate(); });
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<div id="authModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999;">
+  <div style="background:#fff;border-radius:14px;padding:26px 24px;width:320px;text-align:center;color:#1a1a1a;">
+    <p id="authTitle" style="margin:0 0 4px;font-weight:700;font-size:1.05rem;">登录</p>
+    <p id="authHint" style="margin:0 0 6px;color:#6b6b6b;font-size:.83rem;"></p>
+    <input type="email" id="authEmail" class="auth-input" placeholder="邮箱" autocomplete="email">
+    <input type="password" id="authPwd" class="auth-input" placeholder="密码（至少 6 位）" autocomplete="current-password">
+    <p id="authErr" style="display:none;color:#b3261e;font-size:.85rem;margin:8px 0 0;"></p>
+    <div style="display:flex;gap:10px;margin-top:14px;">
+      <button id="authCancel" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;">取消</button>
+      <button id="authGo" style="flex:1;padding:10px;border:none;border-radius:8px;background:#1a1a1a;color:#fff;font-weight:700;cursor:pointer;">登录</button>
+    </div>
+    <p style="margin:12px 0 0;font-size:.85rem;"><a href="#" id="authSwitch" style="color:#1a73e8;">没有账号？去注册</a></p>
+  </div>
+</div>
+<script>
+(function(){
+  var SB_URL = "https://vvwyheyojnmeyzbisxnq.supabase.co";
+  var SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ2d3loZXlvam5tZXl6YmlzeG5xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MTE0MTQsImV4cCI6MjEwNjE4NzQxNH0.U2ZMJZbgm-5cxP7M383ymjX22UW9ZuvtgU8owXV8oR8";
+  var sb = (window.supabase ? window.supabase.createClient(SB_URL, SB_KEY) : null);
+  var myUser = null, authMode = "login";
+  function renderUserMenu(){
+    var m = document.getElementById("userMenu");
+    if(!m) return;
+    m.innerHTML = "";
+    if(myUser){
+      var em = document.createElement("div"); em.className = "uemail"; em.textContent = myUser.email || "已登录";
+      m.appendChild(em);
+      var od = document.createElement("button"); od.textContent = "我的订单";
+      od.onclick = function(){ toggleUserMenu(false); location.href = "shop.html#myorders"; };
+      m.appendChild(od);
+      var out = document.createElement("button"); out.textContent = "退出";
+      out.onclick = function(){ toggleUserMenu(false); if(sb) sb.auth.signOut(); };
+      m.appendChild(out);
+    } else {
+      var li = document.createElement("button"); li.textContent = "登录";
+      li.onclick = function(){ toggleUserMenu(false); openAuth(""); };
+      m.appendChild(li);
+    }
+  }
+  function toggleUserMenu(force){
+    var m = document.getElementById("userMenu");
+    if(!m) return;
+    var showIt = (typeof force === "boolean") ? force : m.classList.contains("hidden");
+    m.classList.toggle("hidden", !showIt);
+  }
+  function openAuth(hint){
+    authMode = "login";
+    document.getElementById("authTitle").textContent = "登录";
+    document.getElementById("authGo").textContent = "登录";
+    document.getElementById("authSwitch").textContent = "没有账号？去注册";
+    document.getElementById("authHint").textContent = hint || "";
+    document.getElementById("authErr").style.display = "none";
+    document.getElementById("authModal").classList.remove("hidden");
+    setTimeout(function(){ document.getElementById("authEmail").focus(); }, 50);
+  }
+  function closeAuth(){ document.getElementById("authModal").classList.add("hidden"); }
+  function authError(msg){ var e = document.getElementById("authErr"); e.textContent = msg; e.style.display = "block"; }
+  document.getElementById("authCancel").onclick = closeAuth;
+  document.getElementById("authSwitch").onclick = function(e){
+    e.preventDefault();
+    authMode = (authMode === "login") ? "signup" : "login";
+    document.getElementById("authTitle").textContent = (authMode === "login") ? "登录" : "注册";
+    document.getElementById("authGo").textContent = (authMode === "login") ? "登录" : "注册";
+    document.getElementById("authSwitch").textContent = (authMode === "login") ? "没有账号？去注册" : "已有账号？去登录";
+    document.getElementById("authErr").style.display = "none";
+  };
+  document.getElementById("authGo").onclick = function(){
+    var email = document.getElementById("authEmail").value.trim();
+    var pwd = document.getElementById("authPwd").value;
+    if(!email || !pwd) return authError("请填写邮箱和密码。");
+    if(pwd.length < 6) return authError("密码至少 6 位。");
+    document.getElementById("authGo").disabled = true;
+    var job = (authMode === "login") ? sb.auth.signInWithPassword({ email: email, password: pwd }) : sb.auth.signUp({ email: email, password: pwd });
+    job.then(function(r){
+      document.getElementById("authGo").disabled = false;
+      if(r.error) return authError(r.error.message === "Invalid login credentials" ? "邮箱或密码不对。" : r.error.message);
+      closeAuth();
+    }).catch(function(e){ document.getElementById("authGo").disabled = false; authError("出错了：" + e.message); });
+  };
+  document.getElementById("authPwd").addEventListener("keydown", function(e){ if(e.key === "Enter") document.getElementById("authGo").click(); });
+  document.getElementById("authModal").addEventListener("click", function(e){ if(e.target === document.getElementById("authModal")) closeAuth(); });
+  async function refreshAuth(){
+    if(!sb) return;
+    try{ var r = await sb.auth.getUser(); myUser = (r.data && r.data.user) ? r.data.user : null; }
+    catch(e){ myUser = null; }
+    renderUserMenu();
+  }
+  if(sb){ sb.auth.onAuthStateChange(function(){ refreshAuth(); }); refreshAuth(); }
+  else { renderUserMenu(); }
+  document.getElementById("userBtn").onclick = function(e){ e.stopPropagation(); toggleUserMenu(); };
+  document.addEventListener("click", function(){ toggleUserMenu(false); });
 })();
 </script>
 </body>

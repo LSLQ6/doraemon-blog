@@ -255,6 +255,7 @@ document.getElementById("authGo").onclick = function(){
   job.then(function(r){
     document.getElementById("authGo").disabled = false;
     if(r.error) return authError(r.error.message === "Invalid login credentials" ? "邮箱或密码不对。" : r.error.message);
+    if(!pendingNet) closeAuth();
   }).catch(function(e){ document.getElementById("authGo").disabled = false; authError("出错了：" + e.message); });
 };
 document.getElementById("authPwd").addEventListener("keydown", function(e){ if(e.key === "Enter") document.getElementById("authGo").click(); });
@@ -266,7 +267,8 @@ async function refreshAuth(){
   }catch(e){ myUser = null; }
   renderAuthArea();
 }
-if(sb){ sb.auth.onAuthStateChange(function(){ refreshAuth().then(function(){ if(myUser && pendingNet){ var n = pendingNet; pendingNet = null; closeAuth(); chooseNet(n.key, n.p); } }); }); refreshAuth(); }
+function checkHashOrders(){ if(location.hash === "#myorders" && myUser){ stopOrder(); stopStatus(); loadMyOrders(); show("view-myorders"); } }
+if(sb){ sb.auth.onAuthStateChange(function(){ refreshAuth().then(function(){ if(myUser && pendingNet){ var n = pendingNet; pendingNet = null; closeAuth(); chooseNet(n.key, n.p); } checkHashOrders(); }); }); refreshAuth().then(checkHashOrders); }
 /* ===== 搜索 & 主题 ===== */
 document.getElementById("searchToggle").onclick = function(){
   var bar = document.getElementById("searchBar");
