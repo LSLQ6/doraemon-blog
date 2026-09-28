@@ -1,14 +1,16 @@
 import { readFileSync, writeFileSync, existsSync } from "fs";
 
 // 自动同步链上 USDT 收款为订单（由 GitHub Actions 定时运行）
-const SELLER = "0x5a93d426357cfc7b83d27cec9d4776b05fc73149";
 const TRANSFER = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 const NETS = {
-  bsc: { label: "BSC", rpc: "https://bsc.publicnode.com", token: "0x55d398326f99059fF775485246999027B3197955", dec: 18, blockTime: 3, chunk: 20000 },
-  arb: { label: "Arbitrum", rpc: "https://arb1.arbitrum.io/rpc", token: "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9", dec: 6, blockTime: 0.25, chunk: 200000 }
+  bsc:    { label: "BSC", kind: "evm", rpc: "https://bsc.publicnode.com", token: "0x55d398326f99059fF775485246999027B3197955", dec: 18, blockTime: 3, chunk: 20000, seller: "0x5a93d426357cfc7b83d27cec9d4776b05fc73149" },
+  arb:    { label: "Arbitrum", kind: "evm", rpc: "https://arb1.arbitrum.io/rpc", token: "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9", dec: 6, blockTime: 0.25, chunk: 200000, seller: "0x5a93d426357cfc7b83d27cec9d4776b05fc73149" },
+  eth:    { label: "Ethereum", kind: "evm", rpc: "https://ethereum-rpc.publicnode.com", token: "0xdAC17F958D2ee523a2206206994597C13D831ec7", dec: 6, blockTime: 12, chunk: 2000, seller: "0x5a93d426357cfc7b83d27cec9d4776b05fc73149" },
+  plasma: { label: "Plasma", kind: "evm", rpc: "https://rpc.plasma.to", token: "0xB8CE59FC3717Ada4C02eadf9682A9e934F625ebb", dec: 6, blockTime: 2, chunk: 5000, seller: "0x5a93d426357cfc7b83d27cec9d4776b05fc73149" },
+  aptos:  { label: "Aptos", kind: "aptos", rpc: "https://fullnode.mainnet.aptoslabs.com/v1", token: "0x357b0b74bc833e95a115ad22604854d6b0fca151cecd94111770e5d6ffc9dc2b", dec: 6, seller: "0x2727508a879fa5df26da24be64481c49020d8b99ce1219b153e7c14bd7c489b2" },
+  sol:    { label: "Solana", kind: "solana", rpc: "https://api.mainnet-beta.solana.com", token: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB", dec: 6, seller: "4ubaQ8zwDZcxSeAJPQbuqAVhcspkyPumRQnRDePnshos" }
 };
-const TO_TOPIC = "0x000000000000000000000000" + SELLER.slice(2).toLowerCase();
-const INIT_DAYS = 3; // 首次运行向前扫描的天数
+const INIT_DAYS = 3; // 首次运行向前扫描的天数（EVM 链）
 
 async function rpc(url, method, params) {
   const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }) });
@@ -16,6 +18,7 @@ async function rpc(url, method, params) {
   if (j.error) throw new Error(j.error.message || "RPC error");
   return j.result;
 }
+function toTopic(addr) { return "0x000000000000000000000000" + String(addr).slice(2).toLowerCase(); }
 function fmtUnits(v, dec) {
   let s = v.toString();
   if (s.length <= dec) s = "0".repeat(dec - s.length + 1) + s;
@@ -27,36 +30,95 @@ function fmtT(ts) { // 北京时间
   const p = n => String(n).padStart(2, "0");
   return d.getUTCFullYear() + "-" + p(d.getUTCMonth() + 1) + "-" + p(d.getUTCDate()) + " " + p(d.getUTCHours()) + ":" + p(d.getUTCMinutes());
 }
+function aptosNorm(a) {
+  a = String(a || "").toLowerCase();
+  if (a.slice(0, 2) !== "0x") a = "0x" + a;
+  let h = a.slice(2);
+  while (h.length < 64) h = "0" + h;
+  return "0x" + h;
+}
+// Aptos: 解析一笔交易里转给卖家的 USDT 金额（primary_fungible_store 直接转账）
+function aptosUsdtToSeller(t, net) {
+  try {
+    const pl = t.payload || {}, args = pl.arguments || [];
+    if (pl.function === "0x1::primary_fungible_store::transfer" && args.length >= 3 &&
+        aptosNorm(args[0]) === aptosNorm(net.token) && aptosNorm(args[1]) === aptosNorm(net.seller)) {
+      return BigInt(args[2]);
+    }
+  } catch (e) {}
+  return 0n;
+}
+// Solana: 解析一笔交易里卖家 USDT 账户的净增量
+function solUsdtToSeller(tx, net) {
+  try {
+    const pre = {}, post = {};
+    for (const b of (tx.meta.preTokenBalances || []))
+      if (b.mint === net.token && String(b.owner) === net.seller) pre[b.accountIndex] = BigInt(b.uiTokenAmount.amount);
+    for (const b of (tx.meta.postTokenBalances || []))
+      if (b.mint === net.token && String(b.owner) === net.seller) post[b.accountIndex] = BigInt(b.uiTokenAmount.amount);
+    let total = 0n;
+    for (const k of Object.keys(post)) {
+      const d = post[k] - (pre[k] || 0n);
+      if (d > 0n) total += d;
+    }
+    return total;
+  } catch (e) { return 0n; }
+}
 
 const products = JSON.parse(readFileSync("products.json", "utf8"));
 const orders = existsSync("orders.json") ? JSON.parse(readFileSync("orders.json", "utf8")) : [];
 const cursor = existsSync(".order-sync.json") ? JSON.parse(readFileSync(".order-sync.json", "utf8")) : {};
 const known = new Set(orders.map(o => (o.chain + "|" + String(o.tx || o.id)).toLowerCase()));
-
 let added = 0;
-for (const [key, net] of Object.entries(NETS)) {
+
+function addOrder(key, net, txRaw, valueRaw, timeMs, fromAddr) {
+  const tx = (net.kind === "solana") ? String(txRaw) : String(txRaw).toLowerCase();
+  const id = (key + "|" + tx).toLowerCase();
+  if (known.has(id) || valueRaw <= 0n) return;
+  const amount = fmtUnits(valueRaw, net.dec);
+  const matches = products.filter(p => parseFloat(p.price) === parseFloat(amount));
+  const p = matches.length === 1 ? matches[0] : null;
+  orders.unshift({
+    id: tx, tx: tx,
+    productId: p ? p.id : null,
+    productName: p ? p.name : "未知商品（" + amount + " USDT，待确认）",
+    price: p ? p.price : amount,
+    chain: key, chainLabel: net.label,
+    from: fromAddr || "", time: fmtT(timeMs),
+    status: "pending", auto: true
+  });
+  known.add(id);
+  added++;
+  console.log("new order:", tx, amount, net.label, p ? p.name : "待确认");
+}
+
+async function scanEvm(key, net) {
+  const topic = toTopic(net.seller);
   const latest = parseInt(await rpc(net.rpc, "eth_blockNumber", []), 16);
   let from = cursor[key] ? cursor[key] + 1 : latest - Math.ceil(INIT_DAYS * 86400 / net.blockTime);
   if (from < 0) from = 0;
-  if (from > latest) { cursor[key] = latest; continue; }
+  if (from > latest) { cursor[key] = latest; return; }
   const found = [];
   // 从最新向最旧扫描，遇到归档限制即停止（公共节点只允许查最近一段）
   for (let b = latest; b > from; ) {
     const a = Math.max(from, b - net.chunk);
     let logs = [];
     try {
-      logs = await rpc(net.rpc, "eth_getLogs", [{ fromBlock: "0x" + a.toString(16), toBlock: "0x" + b.toString(16), address: net.token, topics: [TRANSFER, null, TO_TOPIC] }]);
+      logs = await rpc(net.rpc, "eth_getLogs", [{ fromBlock: "0x" + a.toString(16), toBlock: "0x" + b.toString(16), address: net.token, topics: [TRANSFER, null, topic] }]);
     } catch (e) {
       if (/archive/i.test(e.message)) break;
+      if (/exceeds max results|too many results|query.*too large|range too large/i.test(e.message) && (b - a) > 200) {
+        net.chunk = Math.max(200, Math.floor((b - a) / 2));
+        console.log("shrink chunk", key, "to", net.chunk);
+        continue;
+      }
       console.log("chunk failed", key, a, b, e.message);
       b = a - 1;
       continue;
     }
     for (const l of logs) {
-      const id = (key + "|" + l.transactionHash).toLowerCase();
-      if (known.has(id) || found.some(f => f.id === id)) continue;
       if (BigInt(l.data) <= 0n) continue;
-      found.push({ id, key, net, tx: String(l.transactionHash).toLowerCase(), value: BigInt(l.data), block: l.blockNumber, fromAddr: "0x" + l.topics[1].slice(26) });
+      found.push({ tx: l.transactionHash, value: BigInt(l.data), block: l.blockNumber, fromAddr: "0x" + l.topics[1].slice(26) });
     }
     b = a - 1;
   }
@@ -66,24 +128,58 @@ for (const [key, net] of Object.entries(NETS)) {
     catch (e) { tmap[blk] = Date.now(); }
   }
   found.sort((x, y) => tmap[x.block] - tmap[y.block]);
-  for (const f of found) {
-    const amount = fmtUnits(f.value, net.dec);
-    const matches = products.filter(p => parseFloat(p.price) === parseFloat(amount));
-    const p = matches.length === 1 ? matches[0] : null;
-    orders.unshift({
-      id: f.tx, tx: f.tx,
-      productId: p ? p.id : null,
-      productName: p ? p.name : "未知商品（" + amount + " USDT，待确认）",
-      price: p ? p.price : amount,
-      chain: key, chainLabel: net.label,
-      from: f.fromAddr, time: fmtT(tmap[f.block]),
-      status: "pending", auto: true
-    });
-    known.add(f.id);
-    added++;
-    console.log("new order:", f.tx, amount, net.label, p ? p.name : "待确认");
-  }
+  for (const f of found) addOrder(key, net, f.tx, f.value, tmap[f.block], f.fromAddr);
   cursor[key] = latest;
+}
+
+async function scanSolana(key, net) {
+  const sigs = await rpc(net.rpc, "getSignaturesForAddress", [net.seller, { limit: 1000 }]);
+  const list = sigs || [];
+  const lastSeen = cursor[key] || null;
+  const fresh = [];
+  for (const s of list) {
+    if (lastSeen && s.signature === lastSeen) break;
+    if (!s.err) fresh.push(s);
+  }
+  for (const s of fresh.reverse()) {
+    let tx = null;
+    try { tx = await rpc(net.rpc, "getTransaction", [s.signature, { encoding: "jsonParsed", maxSupportedTransactionVersion: 0 }]); }
+    catch (e) { console.log("sol tx failed", key, s.signature.slice(0, 12), e.message); continue; }
+    if (!tx || !tx.meta || tx.meta.err !== null) continue;
+    const delta = solUsdtToSeller(tx, net);
+    if (delta <= 0n) continue;
+    let sender = "";
+    try { sender = tx.transaction.message.accountKeys[0].pubkey || ""; } catch (e) {}
+    addOrder(key, net, s.signature, delta, (tx.blockTime || Date.now() / 1000) * 1000, sender);
+  }
+  if (list.length) cursor[key] = list[0].signature;
+}
+
+async function scanAptos(key, net) {
+  const r = await fetch(net.rpc + "/accounts/" + net.seller + "/transactions?limit=100");
+  const txns = await r.json();
+  const list = Array.isArray(txns) ? txns : [];
+  const lastVer = cursor[key] ? BigInt(cursor[key]) : null;
+  const fresh = [];
+  for (const t of list) {
+    if (lastVer !== null && BigInt(t.version) <= lastVer) break;
+    if (t.success && aptosUsdtToSeller(t, net) > 0n) fresh.push(t);
+  }
+  for (const t of fresh.reverse()) {
+    const ts = parseInt(t.timestamp || "0", 10);
+    addOrder(key, net, t.hash, aptosUsdtToSeller(t, net), ts > 0 ? Math.floor(ts / 1000) : Date.now(), t.sender || "");
+  }
+  if (list.length) cursor[key] = String(list[0].version);
+}
+
+for (const [key, net] of Object.entries(NETS)) {
+  try {
+    if (net.kind === "solana") await scanSolana(key, net);
+    else if (net.kind === "aptos") await scanAptos(key, net);
+    else await scanEvm(key, net);
+  } catch (e) {
+    console.log("scan failed", key, e.message);
+  }
 }
 writeFileSync("orders.json", JSON.stringify(orders));
 writeFileSync(".order-sync.json", JSON.stringify(cursor));
