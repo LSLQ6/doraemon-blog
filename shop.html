@@ -381,7 +381,8 @@ function onPaid(tx){
     if(e && (e.code === "23505" || String(e.message || "").indexOf("duplicate") >= 0)){
       sb.from("orders").select("id").eq("user_id", myUser.id).eq("tx", txl).limit(1).then(function(r2){
         var id = (r2.data && r2.data[0]) ? r2.data[0].id : null;
-        showPaidSuccess(txl, key, net, prod, id);
+        if(id){ showPaidSuccess(txl, key, net, prod, id); }
+        else { setStatus("这笔交易已被其他订单登记，请确认是你本人的付款后再试。"); }
       });
     } else {
       setStatus("订单登记失败：" + (e.message || e) + "。请点「我已付款，立即检测」重试。");
