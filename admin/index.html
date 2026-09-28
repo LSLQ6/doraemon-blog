@@ -3,98 +3,138 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>写文章 · 祁萧远的博客</title>
+<title>博客管理 · 祁萧远的博客</title>
 <style>
-  :root { --bg:#faf9f7; --text:#1a1a1a; --muted:#6b6b6b; --accent:#e2482e; --card:#fff; --border:#e5e2dc; }
-  * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--text);
-    font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; line-height:1.7; }
-  .wrap { max-width:720px; margin:0 auto; padding:24px 20px 60px; }
-  h1 { font-size:1.7rem; margin:0 0 6px; }
-  .sub { color:var(--muted); font-size:.92rem; margin:0 0 24px; }
-  .sub a { color:#1d5fa8; }
-  label { display:block; font-weight:600; margin:18px 0 6px; font-size:.95rem; }
-  input[type=text], input[type=password], input[type=date], textarea {
-    width:100%; padding:10px 12px; font-size:1rem; border:1px solid var(--border);
-    border-radius:8px; background:var(--card); color:var(--text); font-family:inherit; }
-  textarea { min-height:260px; resize:vertical; line-height:1.8; }
-  .hint { color:var(--muted); font-size:.83rem; margin:6px 0 0; }
-  .row { display:flex; gap:12px; }
-  .row > div { flex:1; }
-  button.publish {
-    margin-top:24px; width:100%; padding:14px; font-size:1.05rem; font-weight:700;
-    color:#fff; background:var(--accent); border:none; border-radius:10px; cursor:pointer; }
-  button.publish:disabled { opacity:.55; cursor:wait; }
-  #status { margin-top:16px; padding:12px 16px; border-radius:8px; font-size:.92rem; display:none; }
-  #status.ok { display:block; background:#e8f5e9; color:#2e7d32; }
-  #status.err { display:block; background:#fdecea; color:#b3261e; }
-  #status.info { display:block; background:#e8f0fe; color:#1a56db; }
-  .back { display:inline-block; margin-bottom:8px; color:#1d5fa8; text-decoration:none; font-size:.9rem; }
-  details { margin-top:26px; border:1px solid var(--border); border-radius:8px; padding:12px 16px; background:var(--card); }
-  details summary { cursor:pointer; font-weight:600; }
-  details ol { margin:10px 0 4px; padding-left:20px; font-size:.9rem; color:var(--muted); }
-  details code { background:#f0eeea; padding:1px 6px; border-radius:4px; font-size:.85em; }
+:root { --bg:#faf9f7; --text:#1a1a1a; --muted:#6b6b6b; --accent:#e2482e; --card:#fff; --border:#e5e2dc; }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--text);
+font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; line-height:1.7; }
+.wrap { max-width:720px; margin:0 auto; padding:24px 20px 60px; }
+.back { display:inline-block; margin-bottom:8px; color:#1d5fa8; text-decoration:none; font-size:.9rem; }
+h1 { font-size:1.7rem; margin:0 0 6px; }
+.sub { color:var(--muted); font-size:.92rem; margin:0 0 18px; }
+.sub a { color:#1d5fa8; }
+.tabs { display:flex; gap:8px; margin:0 0 20px; }
+.tabs button { flex:1; padding:10px; font-size:1rem; font-weight:600; border:1px solid var(--border);
+border-radius:10px; background:var(--card); color:var(--muted); cursor:pointer; }
+.tabs button.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+.tokenbox { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:20px; }
+.tokenbox label { display:block; font-weight:600; margin:0 0 6px; font-size:.95rem; }
+.hint { color:var(--muted); font-size:.83rem; margin:6px 0 0; }
+label { display:block; font-weight:600; margin:18px 0 6px; font-size:.95rem; }
+input[type=text], input[type=password], input[type=date], textarea {
+width:100%; padding:10px 12px; font-size:1rem; border:1px solid var(--border);
+border-radius:8px; background:var(--card); color:var(--text); font-family:inherit; }
+textarea { min-height:260px; resize:vertical; line-height:1.8; }
+.row { display:flex; gap:12px; }
+.row > div { flex:1; }
+button.publish {
+margin-top:24px; width:100%; padding:14px; font-size:1.05rem; font-weight:700;
+color:#fff; background:var(--accent); border:none; border-radius:10px; cursor:pointer; }
+button.publish:disabled { opacity:.55; cursor:wait; }
+button.load {
+width:100%; padding:12px; font-size:1rem; font-weight:600; color:#fff;
+background:#1d5fa8; border:none; border-radius:10px; cursor:pointer; margin-top:4px; }
+button.load:disabled { opacity:.55; cursor:wait; }
+#status { margin-top:16px; padding:12px 16px; border-radius:8px; font-size:.92rem; display:none; }
+#status.ok { display:block; background:#e8f5e9; color:#2e7d32; }
+#status.err { display:block; background:#fdecea; color:#b3261e; }
+#status.info { display:block; background:#e8f0fe; color:#1a56db; }
+details { margin-top:26px; border:1px solid var(--border); border-radius:8px; padding:12px 16px; background:var(--card); }
+details summary { cursor:pointer; font-weight:600; }
+details ol { margin:10px 0 4px; padding-left:20px; font-size:.9rem; color:var(--muted); }
+details code { background:#f0eeea; padding:1px 6px; border-radius:4px; font-size:.85em; }
+.post { display:flex; align-items:center; gap:10px; background:var(--card); border:1px solid var(--border);
+border-radius:10px; padding:12px 14px; margin-top:10px; }
+.post .meta { flex:1; min-width:0; }
+.post .t { font-weight:700; font-size:1rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.post .d { color:var(--muted); font-size:.83rem; }
+button.del { padding:8px 16px; font-size:.9rem; font-weight:600; color:#fff; background:#b3261e;
+border:none; border-radius:8px; cursor:pointer; flex-shrink:0; }
+button.del:disabled { opacity:.55; cursor:wait; }
+.empty { color:var(--muted); text-align:center; padding:30px 0; font-size:.95rem; }
+.hidden { display:none; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <a class="back" href="../">← 返回博客首页</a>
-  <h1>写文章</h1>
-  <p class="sub">写完点发布，文章会自动同步到你的 GitHub 仓库，几分钟后博客上就能看到。</p>
+<a class="back" href="../">← 返回博客首页</a>
+<h1>博客管理</h1>
+<p class="sub">写文章、删除文章都在这一页完成。操作会自动同步到你的 GitHub 仓库。</p>
 
-  <label>GitHub 访问令牌</label>
-  <input type="password" id="token" placeholder="粘贴你的 token（只保存在本浏览器，不会上传到别处）">
-  <p class="hint">发布需要一个有仓库写权限的 token，只在本页面使用，关闭页面即清除。获取方法见下方说明。</p>
+<div class="tokenbox">
+<label>GitHub 访问令牌</label>
+<input type="password" id="token" placeholder="粘贴你的 token（只保存在本浏览器，不会上传到别处）">
+<p class="hint">写文章和删除都需要一个有仓库写权限的 token。获取方法见下方说明。关闭页面即清除。</p>
+</div>
 
-  <label>标题</label>
-  <input type="text" id="title" placeholder="给文章起个标题">
+<div class="tabs">
+<button id="tabWrite" class="active" onclick="showTab('write')">写文章</button>
+<button id="tabManage" onclick="showTab('manage')">管理文章</button>
+</div>
 
-  <div class="row">
-    <div>
-      <label>分类</label>
-      <input type="text" id="category" list="cats" placeholder="如：生活">
-      <datalist id="cats">
-        <option value="生活"><option value="阅读"><option value="思考"><option value="技术">
-      </datalist>
-    </div>
-    <div>
-      <label>日期</label>
-      <input type="date" id="date">
-    </div>
-  </div>
+<div id="paneWrite">
+<label>标题</label>
+<input type="text" id="title" placeholder="给文章起个标题">
+<div class="row">
+<div>
+<label>分类</label>
+<input type="text" id="category" list="cats" placeholder="如：生活">
+<datalist id="cats">
+<option value="生活"><option value="阅读"><option value="思考"><option value="技术">
+</datalist>
+</div>
+<div>
+<label>日期</label>
+<input type="date" id="date">
+</div>
+</div>
+<label>摘要（一句话）</label>
+<input type="text" id="excerpt" placeholder="会显示在首页列表里">
+<label>正文（支持 Markdown）</label>
+<textarea id="body" placeholder="在这里写正文……"></textarea>
+<button class="publish" id="publishBtn">发布文章</button>
+</div>
 
-  <label>摘要（一句话）</label>
-  <input type="text" id="excerpt" placeholder="会显示在首页列表里">
+<div id="paneManage" class="hidden">
+<button class="load" id="loadBtn">加载文章列表</button>
+<div id="postList"></div>
+</div>
 
-  <label>正文（支持 Markdown）</label>
-  <textarea id="body" placeholder="在这里写正文……&#10;&#10;空行分段，# 是标题，- 开头是列表，**文字** 加粗"></textarea>
+<div id="status"></div>
 
-  <button class="publish" id="publishBtn">发布文章</button>
-  <div id="status"></div>
-
-  <details>
-    <summary>如何获取访问令牌（只需做一次）</summary>
-    <ol>
-      <li>打开 GitHub → 右上角头像 → <code>Settings</code></li>
-      <li>左下角 <code>Developer settings</code> → <code>Personal access tokens</code> → <code>Fine-grained tokens</code></li>
-      <li>点击 <code>Generate new token</code>，Repository access 选 <code>Only select repositories</code>，勾选 <code>doraemon-blog</code></li>
-      <li>Permissions 里找到 <code>Contents</code>，设为 <code>Read and write</code>，然后生成</li>
-      <li>把生成的 token 复制，粘贴到本页上方的输入框即可</li>
-    </ol>
-  </details>
+<details>
+<summary>如何获取访问令牌（只需做一次）</summary>
+<ol>
+<li>打开 GitHub → 右上角头像 → <code>Settings</code></li>
+<li>左下角 <code>Developer settings</code> → <code>Personal access tokens</code> → <code>Fine-grained tokens</code></li>
+<li>点击 <code>Generate new token</code>，Repository access 选 <code>Only select repositories</code>，勾选 <code>doraemon-blog</code></li>
+<li>Permissions 里找到 <code>Contents</code>，设为 <code>Read and write</code>，然后生成</li>
+<li>把生成的 token 复制，粘贴到本页上方的输入框即可</li>
+</ol>
+</details>
 </div>
 
 <script>
 const OWNER = "LSLQ6", REPO = "doraemon-blog", BRANCH = "main";
 const $ = id => document.getElementById(id);
-document.getElementById("date").value = new Date().toISOString().slice(0, 10);
+$("date").value = new Date().toISOString().slice(0, 10);
+
+function showTab(which) {
+  $("paneWrite").classList.toggle("hidden", which !== "write");
+  $("paneManage").classList.toggle("hidden", which !== "manage");
+  $("tabWrite").classList.toggle("active", which === "write");
+  $("tabManage").classList.toggle("active", which === "manage");
+}
 
 function setStatus(msg, kind) {
   const el = $("status");
   el.textContent = msg;
-  el.className = kind;
+  el.className = kind || "";
 }
+
 const b64 = s => btoa(String.fromCharCode(...new TextEncoder().encode(s)));
+const b64dec = s => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\n/g, "")), c => c.charCodeAt(0)));
 
 async function gh(path, token, method, body) {
   const res = await fetch("https://api.github.com/repos/" + OWNER + "/" + REPO + "/contents/" + path, {
@@ -122,7 +162,6 @@ $("publishBtn").onclick = async () => {
   const body = $("body").value.trim();
   if (!token) return setStatus("请先填写 GitHub 访问令牌。", "err");
   if (!title || !body) return setStatus("标题和正文不能为空。", "err");
-
   const btn = $("publishBtn");
   btn.disabled = true;
   try {
@@ -131,15 +170,13 @@ $("publishBtn").onclick = async () => {
     const md = "---\ntitle: " + title.replace(/\n/g, " ") +
       "\ndate: " + date + "\ncategory: " + category.replace(/\n/g, " ") +
       "\nexcerpt: " + excerpt.replace(/\n/g, " ") + "\n---\n\n" + body + "\n";
-
     await gh("posts/" + file, token, "PUT", {
       message: "发布文章：" + title,
       content: b64(md),
       branch: BRANCH
     });
-
     const idx = await gh("posts.json", token);
-    const list = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(idx.content.replace(/\n/g, "")), c => c.charCodeAt(0))));
+    const list = JSON.parse(b64dec(idx.content));
     list.unshift({ file, title, date, category, excerpt });
     await gh("posts.json", token, "PUT", {
       message: "更新文章索引",
@@ -147,7 +184,6 @@ $("publishBtn").onclick = async () => {
       sha: idx.sha,
       branch: BRANCH
     });
-
     setStatus("发布成功！几分钟后在博客首页就能看到这篇文章。", "ok");
     $("title").value = ""; $("excerpt").value = ""; $("body").value = "";
   } catch (e) {
@@ -157,7 +193,81 @@ $("publishBtn").onclick = async () => {
   }
 };
 
-// 关闭页面时清除 token，不长期保存
+$("loadBtn").onclick = async () => {
+  const token = $("token").value.trim();
+  if (!token) return setStatus("请先填写 GitHub 访问令牌。", "err");
+  const btn = $("loadBtn");
+  btn.disabled = true;
+  try {
+    setStatus("正在加载…", "info");
+    const idx = await gh("posts.json", token);
+    const list = JSON.parse(b64dec(idx.content));
+    renderList(list);
+    setStatus(list.length ? ("共 " + list.length + " 篇文章。") : "还没有文章。", "ok");
+  } catch (e) {
+    setStatus("加载失败：" + e.message, "err");
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+function renderList(list) {
+  const box = $("postList");
+  box.innerHTML = "";
+  if (!list.length) {
+    box.innerHTML = '<div class="empty">暂无文章</div>';
+    return;
+  }
+  list.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "post";
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    const t = document.createElement("div");
+    t.className = "t";
+    t.textContent = p.title;
+    const d = document.createElement("div");
+    d.className = "d";
+    d.textContent = p.date + " · " + (p.category || "");
+    meta.appendChild(t); meta.appendChild(d);
+    const del = document.createElement("button");
+    del.className = "del";
+    del.textContent = "删除";
+    del.onclick = () => deletePost(p, del);
+    div.appendChild(meta); div.appendChild(del);
+    box.appendChild(div);
+  });
+}
+
+async function deletePost(p, btn) {
+  const token = $("token").value.trim();
+  if (!token) return setStatus("请先填写 GitHub 访问令牌。", "err");
+  if (!confirm("确定删除《" + p.title + "》吗？删除后不可恢复。")) return;
+  btn.disabled = true;
+  try {
+    setStatus("正在删除《" + p.title + "》…", "info");
+    const f = await gh("posts/" + p.file, token);
+    await gh("posts/" + p.file, token, "DELETE", {
+      message: "删除文章：" + p.title,
+      sha: f.sha,
+      branch: BRANCH
+    });
+    const idx = await gh("posts.json", token);
+    const list = JSON.parse(b64dec(idx.content)).filter(x => x.file !== p.file);
+    await gh("posts.json", token, "PUT", {
+      message: "更新文章索引",
+      content: b64(JSON.stringify(list)),
+      sha: idx.sha,
+      branch: BRANCH
+    });
+    renderList(list);
+    setStatus("已删除《" + p.title + "》。", "ok");
+  } catch (e) {
+    setStatus("删除失败：" + e.message, "err");
+    btn.disabled = false;
+  }
+}
+
 window.addEventListener("beforeunload", () => { $("token").value = ""; });
 </script>
 </body>
