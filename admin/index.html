@@ -366,7 +366,7 @@ async function loadSbOrders(){
     }catch(e){}
     const list = (r.data || []).map(o => ({
       id: o.id, productName: o.product_name, price: o.price,
-      chain: o.chain, chainLabel: (o.chain === "bsc" ? "BSC" : (o.chain === "arb" ? "Arbitrum" : (o.chain || ""))),
+      chain: o.chain, chainLabel: ({bsc:"BSC",arb:"Arbitrum",eth:"Ethereum",plasma:"Plasma",aptos:"Aptos",sol:"SOL",tron:"TRON"})[o.chain] || o.chain || "",
       tx: o.tx, time: fmtT(o.created_at), status: o.status, buyer: buyerMap[o.id] || ""
     }));
     renderOrders(list);
