@@ -4,12 +4,13 @@
 <meta name="google-site-verification" content="Wfxsd0JNS7pjBHgvT-dJShVUch-a94c8np1R-L0VpXE" />
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>祁萧远的博客</title>
+<title data-i18n-title="doc_title_blog">祁萧远的博客</title>
 <meta name="description" content="生活、阅读与v=4思考。把稍纵即逝的念头，整理成可以慢慢阅读的文字。">
-<link rel="stylesheet" href="styles.css?v=8">
+<link rel="stylesheet" href="styles.css?v=9">
+<script src="i18n.js?v=1"></script>
 <style>
 .umenu-wrap { position:relative; }
-.umenu { position:absolute; right:0; top:calc(100% + 10px); background:var(--card,#fff); border:1px solid var(--border,#e5e5e5); border-radius:12px; min-width:170px; box-shadow:0 10px 30px rgba(0,0,0,.14); z-index:200; overflow:hidden; }
+.umenu { position:absolute; right:calc(100% + 10px); top:-6px; background:var(--card,#fff); border:1px solid var(--border,#e5e5e5); border-radius:12px; min-width:170px; box-shadow:0 10px 30px rgba(0,0,0,.14); z-index:200; overflow:hidden; }
 .umenu .uemail { padding:10px 14px; font-size:.78rem; color:var(--muted,#6b6b6b); border-bottom:1px solid var(--border,#e5e5e5); word-break:break-all; }
 .umenu button { display:block; width:100%; text-align:left; padding:11px 14px; background:none; border:none; font-size:.92rem; color:var(--text,#1a1a1a); cursor:pointer; }
 .umenu button:hover { background:rgba(128,128,128,.12); }
@@ -22,19 +23,23 @@
   <div class="wrap header-inner">
     <span class="brand-row"><img src="logo.png" class="brand-logo" alt="" id="logoGate" style="user-select:none;-webkit-user-select:none;"><a class="brand" href="#" data-nav="home">祁萧远</a></span>
     <nav class="main-nav">
-      <a href="#" data-nav="home">文章</a> <a href="shop.html">购物</a>
+      <a href="#" data-nav="home" data-i18n="nav_posts">文章</a> <a href="shop.html" data-i18n="nav_shop">购物</a>
     </nav>
     <div class="header-tools">
-      <button class="icon-btn" id="searchToggle" aria-label="搜索">🔍</button>
-      <button class="icon-btn" id="themeToggle" aria-label="切换深色模式">🌙</button>
       <div class="umenu-wrap">
-        <button class="icon-btn gear-btn" id="userBtn" aria-label="用户菜单"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><defs><mask id="gearHole"><rect width="24" height="24" fill="#fff"/><circle cx="12" cy="12" r="2.6" fill="#000"/></mask></defs><g class="gear-fill" fill="#1a1a1a" mask="url(#gearHole)"><circle cx="12" cy="12" r="6.4"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1" transform="rotate(45 12 12)"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1" transform="rotate(90 12 12)"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1" transform="rotate(135 12 12)"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1" transform="rotate(180 12 12)"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1" transform="rotate(225 12 12)"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1" transform="rotate(270 12 12)"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1" transform="rotate(315 12 12)"/></g></svg></button>
+        <button class="icon-btn gear-btn" id="userBtn" data-i18n-aria="aria_user"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><defs><mask id="gearHole"><rect width="24" height="24" fill="#fff"/><circle cx="12" cy="12" r="2.6" fill="#000"/></mask></defs><g class="gear-fill" fill="#1a1a1a" mask="url(#gearHole)"><circle cx="12" cy="12" r="6.4"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1" transform="rotate(45 12 12)"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1" transform="rotate(90 12 12)"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1" transform="rotate(135 12 12)"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1" transform="rotate(180 12 12)"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1" transform="rotate(225 12 12)"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1" transform="rotate(270 12 12)"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1" transform="rotate(315 12 12)"/></g></svg></button>
         <div class="umenu hidden" id="userMenu"></div>
+      </div>
+      <button class="icon-btn" id="searchToggle" data-i18n-aria="aria_search">🔍</button>
+      <button class="icon-btn" id="themeToggle" data-i18n-aria="aria_theme">🌙</button>
+      <div class="umenu-wrap">
+        <button class="icon-btn" id="langBtn" data-i18n-aria="aria_lang">🌐</button>
+        <div class="umenu hidden" id="langMenu"></div>
       </div>
     </div>
   </div>
   <div class="wrap search-bar hidden" id="searchBar">
-    <input type="search" id="searchInput" placeholder="搜索文章标题、内容…">
+    <input type="search" id="searchInput" data-i18n-ph="search_ph_posts" placeholder="搜索文章标题、内容…">
   </div>
 </header>
 
@@ -42,15 +47,15 @@
   <!-- 首页 -->
   <section id="view-home">
     <div class="section-head">
-      <h2>最新文章</h2>
+      <h2 data-i18n="latest_posts">最新文章</h2>
     </div>
     <div id="postList" class="post-list"></div>
-    <p class="empty hidden" id="emptyMsg">没有找到相关文章，换个关键词试试。</p>
+    <p class="empty hidden" id="emptyMsg" data-i18n="empty_search">没有找到相关文章，换个关键词试试。</p>
   </section>
 
   <!-- 文章页 -->
   <section id="view-post" class="hidden">
-    <a href="#" class="back" data-nav="home">← 返回文章列表</a>
+    <a href="#" class="back" data-nav="home" data-i18n="back_to_posts">← 返回文章列表</a>
     <article class="post-full">
       <p class="post-meta" id="postMeta"></p>
       <h1 id="postTitle"></h1>
@@ -60,11 +65,11 @@
 
   <!-- 关于页 -->
   <section id="view-about" class="hidden">
-    <h1>关于</h1>
+    <h1 data-i18n="about_title">关于</h1>
     <div class="post-body">
-      <p>你好，这里是祁萧远的博客。</p>
-      <p>这是一个记录生活、阅读与思考的地方。把稍纵即逝的念头，整理成可以慢慢阅读的文字。</p>
-      <p>（这段介绍是示例，换成你自己的介绍吧。）</p>
+      <p data-i18n="about_p1">你好，这里是祁萧远的博客。</p>
+      <p data-i18n="about_p2">这是一个记录生活、阅读与思考的地方。把稍纵即逝的念头，整理成可以慢慢阅读的文字。</p>
+      <p data-i18n="about_p3">（这段介绍是示例，换成你自己的介绍吧。）</p>
     </div>
   </section>
 </main>
@@ -75,15 +80,15 @@
   </div>
 </footer>
 
-<script src="app.js"></script>
+<script src="app.js?v=1"></script>
 <div id="gateModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999;">
   <div style="background:#fff;border-radius:14px;padding:26px 24px;width:300px;text-align:center;color:#1a1a1a;">
-    <p style="margin:0 0 12px;font-weight:700;">请输入后台密码</p>
-    <input type="password" id="gatePwd" placeholder="密码" style="width:100%;padding:10px 12px;font-size:1rem;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;" autocomplete="off">
-    <p id="gateErr" style="display:none;color:#b3261e;font-size:.85rem;margin:8px 0 0;">密码不对，再试试</p>
+    <p style="margin:0 0 12px;font-weight:700;" data-i18n="gate_title">请输入后台密码</p>
+    <input type="password" id="gatePwd" data-i18n-ph="gate_pwd_ph" placeholder="密码" style="width:100%;padding:10px 12px;font-size:1rem;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;" autocomplete="off">
+    <p id="gateErr" style="display:none;color:#b3261e;font-size:.85rem;margin:8px 0 0;" data-i18n="gate_wrong">密码不对，再试试</p>
     <div style="display:flex;gap:10px;margin-top:14px;">
-      <button id="gateCancel" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;">取消</button>
-      <button id="gateOk" style="flex:1;padding:10px;border:none;border-radius:8px;background:#1a1a1a;color:#fff;font-weight:700;cursor:pointer;">进入</button>
+      <button id="gateCancel" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;" data-i18n="gate_cancel">取消</button>
+      <button id="gateOk" style="flex:1;padding:10px;border:none;border-radius:8px;background:#1a1a1a;color:#fff;font-weight:700;cursor:pointer;" data-i18n="gate_enter">进入</button>
     </div>
   </div>
 </div>
@@ -116,16 +121,16 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <div id="authModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999;">
   <div style="background:#fff;border-radius:14px;padding:26px 24px;width:320px;text-align:center;color:#1a1a1a;">
-    <p id="authTitle" style="margin:0 0 4px;font-weight:700;font-size:1.05rem;">登录</p>
+    <p id="authTitle" style="margin:0 0 4px;font-weight:700;font-size:1.05rem;" data-i18n="auth_login">登录</p>
     <p id="authHint" style="margin:0 0 6px;color:#6b6b6b;font-size:.83rem;"></p>
-    <input type="email" id="authEmail" class="auth-input" placeholder="邮箱" autocomplete="email">
-    <input type="password" id="authPwd" class="auth-input" placeholder="密码（至少 6 位）" autocomplete="current-password">
+    <input type="email" id="authEmail" class="auth-input" data-i18n-ph="auth_email_ph" placeholder="邮箱" autocomplete="email">
+    <input type="password" id="authPwd" class="auth-input" data-i18n-ph="auth_pwd_ph" placeholder="密码（至少 6 位）" autocomplete="current-password">
     <p id="authErr" style="display:none;color:#b3261e;font-size:.85rem;margin:8px 0 0;"></p>
     <div style="display:flex;gap:10px;margin-top:14px;">
-      <button id="authCancel" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;">取消</button>
-      <button id="authGo" style="flex:1;padding:10px;border:none;border-radius:8px;background:#1a1a1a;color:#fff;font-weight:700;cursor:pointer;">登录</button>
+      <button id="authCancel" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;" data-i18n="auth_cancel">取消</button>
+      <button id="authGo" style="flex:1;padding:10px;border:none;border-radius:8px;background:#1a1a1a;color:#fff;font-weight:700;cursor:pointer;" data-i18n="auth_login">登录</button>
     </div>
-    <p style="margin:12px 0 0;font-size:.85rem;"><a href="#" id="authSwitch" style="color:#1a73e8;">没有账号？去注册</a></p>
+    <p style="margin:12px 0 0;font-size:.85rem;"><a href="#" id="authSwitch" style="color:#1a73e8;" data-i18n="auth_no_account">没有账号？去注册</a></p>
   </div>
 </div>
 <script>
@@ -139,16 +144,16 @@
     if(!m) return;
     m.innerHTML = "";
     if(myUser){
-      var em = document.createElement("div"); em.className = "uemail"; em.textContent = myUser.email || "已登录";
+      var em = document.createElement("div"); em.className = "uemail"; em.textContent = myUser.email || t("menu_logged_in");
       m.appendChild(em);
-      var od = document.createElement("button"); od.textContent = "我的订单";
+      var od = document.createElement("button"); od.textContent = t("menu_myorders");
       od.onclick = function(){ toggleUserMenu(false); location.href = "shop.html#myorders"; };
       m.appendChild(od);
-      var out = document.createElement("button"); out.textContent = "退出";
+      var out = document.createElement("button"); out.textContent = t("menu_logout");
       out.onclick = function(){ toggleUserMenu(false); if(sb) sb.auth.signOut(); };
       m.appendChild(out);
     } else {
-      var li = document.createElement("button"); li.textContent = "登录";
+      var li = document.createElement("button"); li.textContent = t("auth_login");
       li.onclick = function(){ toggleUserMenu(false); openAuth(""); };
       m.appendChild(li);
     }
@@ -161,9 +166,9 @@
   }
   function openAuth(hint){
     authMode = "login";
-    document.getElementById("authTitle").textContent = "登录";
-    document.getElementById("authGo").textContent = "登录";
-    document.getElementById("authSwitch").textContent = "没有账号？去注册";
+    document.getElementById("authTitle").textContent = t("auth_login");
+    document.getElementById("authGo").textContent = t("auth_login");
+    document.getElementById("authSwitch").textContent = t("auth_no_account");
     document.getElementById("authHint").textContent = hint || "";
     document.getElementById("authErr").style.display = "none";
     document.getElementById("authModal").classList.remove("hidden");
@@ -175,23 +180,23 @@
   document.getElementById("authSwitch").onclick = function(e){
     e.preventDefault();
     authMode = (authMode === "login") ? "signup" : "login";
-    document.getElementById("authTitle").textContent = (authMode === "login") ? "登录" : "注册";
-    document.getElementById("authGo").textContent = (authMode === "login") ? "登录" : "注册";
-    document.getElementById("authSwitch").textContent = (authMode === "login") ? "没有账号？去注册" : "已有账号？去登录";
+    document.getElementById("authTitle").textContent = (authMode === "login") ? t("auth_login") : t("auth_signup");
+    document.getElementById("authGo").textContent = (authMode === "login") ? t("auth_login") : t("auth_signup");
+    document.getElementById("authSwitch").textContent = (authMode === "login") ? t("auth_no_account") : t("auth_has_account");
     document.getElementById("authErr").style.display = "none";
   };
   document.getElementById("authGo").onclick = function(){
     var email = document.getElementById("authEmail").value.trim();
     var pwd = document.getElementById("authPwd").value;
-    if(!email || !pwd) return authError("请填写邮箱和密码。");
-    if(pwd.length < 6) return authError("密码至少 6 位。");
+    if(!email || !pwd) return authError(t("auth_fill_both"));
+    if(pwd.length < 6) return authError(t("auth_pwd_short"));
     document.getElementById("authGo").disabled = true;
     var job = (authMode === "login") ? sb.auth.signInWithPassword({ email: email, password: pwd }) : sb.auth.signUp({ email: email, password: pwd });
     job.then(function(r){
       document.getElementById("authGo").disabled = false;
-      if(r.error) return authError(r.error.message === "Invalid login credentials" ? "邮箱或密码不对。" : r.error.message);
+      if(r.error) return authError(r.error.message === "Invalid login credentials" ? t("auth_bad_cred") : r.error.message);
       closeAuth();
-    }).catch(function(e){ document.getElementById("authGo").disabled = false; authError("出错了：" + e.message); });
+    }).catch(function(e){ document.getElementById("authGo").disabled = false; authError(t("auth_error_prefix") + e.message); });
   };
   document.getElementById("authPwd").addEventListener("keydown", function(e){ if(e.key === "Enter") document.getElementById("authGo").click(); });
   document.getElementById("authModal").addEventListener("click", function(e){ if(e.target === document.getElementById("authModal")) closeAuth(); });
@@ -203,8 +208,9 @@
   }
   if(sb){ sb.auth.onAuthStateChange(function(){ refreshAuth(); }); refreshAuth(); }
   else { renderUserMenu(); }
-  document.getElementById("userBtn").onclick = function(e){ e.stopPropagation(); toggleUserMenu(); };
+  document.getElementById("userBtn").onclick = function(e){ e.stopPropagation(); if(window.I18N) I18N.toggleLangMenu(false); toggleUserMenu(); };
   document.addEventListener("click", function(){ toggleUserMenu(false); });
+  if(window.I18N) I18N.onChange(function(){ renderUserMenu(); });
 })();
 </script>
 </body>

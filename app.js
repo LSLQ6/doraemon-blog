@@ -1,4 +1,4 @@
-/* 祁萧远的博客 —— 文章从 posts.json + posts/*.md 加载。
+/* 哆啦A梦的博客 —— 文章从 posts.json + posts/*.md 加载。
  * 写新文章请用「写文章」后台页面，或按 posts/ 下的格式手动添加。 */
 
 let POSTS = [];
@@ -27,7 +27,7 @@ function renderCats() {
   categories().forEach(c => {
     const b = document.createElement("button");
     b.className = "cat-btn" + (c === activeCat ? " active" : "");
-    b.textContent = c;
+    b.textContent = (c === "全部" && window.t) ? t("cat_all") : c;
     b.onclick = () => { activeCat = c; renderCats(); renderList(); };
     box.appendChild(b);
   });
@@ -51,7 +51,7 @@ function renderList() {
     const a = document.createElement("a");
     a.className = "post-card";
     a.innerHTML =
-      '<p class="post-card-cat">' + (p.demo ? "示例 · " : "") + esc(p.category) + "</p>" +
+      '<p class="post-card-cat">' + (p.demo ? t("demo_prefix") : "") + esc(p.category) + "</p>" +
       '<h3 class="post-card-title">' + esc(p.title) + "</h3>" +
       '<p class="post-card-excerpt">' + esc(p.excerpt) + "</p>" +
       '<p class="post-card-date">' + esc(p.date) + "</p>";
@@ -120,10 +120,10 @@ function parseFrontmatter(text) {
 
 async function openPost(p) {
   document.getElementById("postMeta").textContent =
-    (p.demo ? "示例 · " : "") + p.category + " · " + p.date;
+    (p.demo ? t("demo_prefix") : "") + p.category + " · " + p.date;
   document.getElementById("postTitle").textContent = p.title;
   const bodyEl = document.getElementById("postBody");
-  bodyEl.innerHTML = "<p>加载中…</p>";
+  bodyEl.innerHTML = "<p>" + t("loading") + "</p>";
   show("post");
   try {
     const res = await fetch("posts/" + p.file);
@@ -131,10 +131,10 @@ async function openPost(p) {
     const text = await res.text();
     const { body } = parseFrontmatter(text);
     bodyEl.innerHTML =
-      (p.demo ? '<p class="demo-note">这是示例文章，发布前记得替换成你自己的内容。</p>' : "") +
+      (p.demo ? '<p class="demo-note">' + t("demo_note") + "</p>" : "") +
       mdToHtml(body);
   } catch (e) {
-    bodyEl.innerHTML = "<p>文章加载失败，请稍后重试。</p>";
+    bodyEl.innerHTML = "<p>" + t("load_fail") + "</p>";
   }
 }
 
@@ -179,6 +179,7 @@ fetch("posts.json")
     renderList();
   })
   .catch(() => {
-    document.getElementById("postList").innerHTML = "<p>文章列表加载失败。</p>";
+    document.getElementById("postList").innerHTML = "<p>" + t("list_fail") + "</p>";
   });
 show("home");
+if(window.I18N) I18N.onChange(function(){ renderCats(); renderList(); });
