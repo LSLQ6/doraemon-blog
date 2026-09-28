@@ -3,10 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title data-i18n-title="doc_title_shop">购物 · 祁萧远的博客</title>
+<title>购物 · 祁萧远的博客</title>
 <meta name="description" content="商品列表，支持 USDT 支付">
 <link rel="stylesheet" href="styles.css?v=9">
-<script src="i18n.js?v=1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 .shop-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; margin:18px 0 40px; }
@@ -72,72 +71,68 @@
 <div class="wrap header-inner">
 <span class="brand-row"><img src="logo.png" class="brand-logo" alt="" id="logoGate" style="user-select:none;-webkit-user-select:none;"><a class="brand" href="index.html">祁萧远</a></span>
 <nav class="main-nav">
-<a href="index.html" data-i18n="nav_posts">文章</a>
-<a href="shop.html" data-i18n="nav_shop">购物</a>
+<a href="index.html">文章</a>
+<a href="shop.html">购物</a>
 </nav>
 <div class="header-tools">
 <div class="umenu-wrap">
-<button class="icon-btn gear-btn" id="userBtn" data-i18n-aria="aria_user"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><defs><mask id="gearHole"><rect width="24" height="24" fill="#fff"/><circle cx="12" cy="12" r="2.6" fill="#000"/></mask></defs><g class="gear-fill" fill="#1a1a1a" mask="url(#gearHole)"><circle cx="12" cy="12" r="6.4"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1" transform="rotate(45 12 12)"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1" transform="rotate(90 12 12)"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1" transform="rotate(135 12 12)"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1" transform="rotate(180 12 12)"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1" transform="rotate(225 12 12)"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1" transform="rotate(270 12 12)"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1" transform="rotate(315 12 12)"/></g></svg></button>
+<button class="icon-btn gear-btn" id="userBtn" aria-label="用户菜单"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><defs><mask id="gearHole"><rect width="24" height="24" fill="#fff"/><circle cx="12" cy="12" r="2.6" fill="#000"/></mask></defs><g class="gear-fill" fill="#1a1a1a" mask="url(#gearHole)"><circle cx="12" cy="12" r="6.4"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1" transform="rotate(45 12 12)"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1" transform="rotate(90 12 12)"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1" transform="rotate(135 12 12)"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1" transform="rotate(180 12 12)"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1" transform="rotate(225 12 12)"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1" transform="rotate(270 12 12)"/><rect x="10.9" y="2.2" width="2.2" height="4.6" rx="1" transform="rotate(315 12 12)"/></g></svg></button>
 <div class="umenu hidden" id="userMenu"></div>
 </div>
-<button class="icon-btn" id="searchToggle" data-i18n-aria="aria_search">🔍</button>
-<button class="icon-btn" id="themeToggle" data-i18n-aria="aria_theme">🌙</button>
-<div class="umenu-wrap">
-<button class="icon-btn" id="langBtn" data-i18n-aria="aria_lang">🌐</button>
-<div class="umenu hidden" id="langMenu"></div>
-</div>
+<button class="icon-btn" id="searchToggle" aria-label="搜索">🔍</button>
+<button class="icon-btn" id="themeToggle" aria-label="切换深色模式">🌙</button>
 </div>
 </div>
 <div class="wrap search-bar hidden" id="searchBar">
-<input type="search" id="searchInput" data-i18n-ph="search_ph_products" placeholder="搜索商品名称…">
+<input type="search" id="searchInput" placeholder="搜索商品名称…">
 </div>
 </header>
 <main class="wrap">
 <section id="view-list">
-<div class="section-head"><h2 data-i18n="shop_products">商品</h2></div>
+<div class="section-head"><h2>商品</h2></div>
 <div id="productGrid" class="shop-grid"></div>
-<div id="emptyShop" class="empty hidden" data-i18n="shop_empty">店主还未上架商品，敬请期待。</div>
+<div id="emptyShop" class="empty hidden">店主还未上架商品，敬请期待。</div>
 </section>
 <section id="view-order" class="hidden">
-<p><a class="back" href="#" id="backToList" data-i18n="back_to_products">← 返回商品列表</a></p>
-<div class="section-head"><h2 data-i18n="order_confirm">确认订单</h2></div>
+<p><a class="back" href="#" id="backToList">← 返回商品列表</a></p>
+<div class="section-head"><h2>确认订单</h2></div>
 <div id="orderSummary"></div>
 <div id="payPanel" class="pay-panel hidden">
-<p class="pay-note2" style="color:#d93025;font-weight:700;"><span data-i18n="pay_warn_a">⚠️ 请确保店主实际收到 </span><span id="payNeedFull"></span><span data-i18n="pay_warn_b"> USDT：从交易所提币时手续费是另外扣的，请把手续费算进去、足额转出；少到账（比如只到 5.98）系统检测不到付款。</span></p>
-<p><span data-i18n="pay_pay">请支付</span> <b id="payAmount" style="font-size:1.3rem;color:var(--text)"></b></p>
-<p style="font-weight:700;margin:0 0 8px;"><span data-i18n="pay_network">支付网络：</span><span id="payNetLabel"></span></p>
-<img id="payQR" src="" data-i18n-alt="pay_qr_alt" alt="收款二维码" width="200" height="200">
+<p class="pay-note2" style="color:#d93025;font-weight:700;">⚠️ 请确保店主实际收到 <span id="payNeedFull"></span> USDT：从交易所提币时手续费是另外扣的，请把手续费算进去、足额转出；少到账（比如只到 5.98）系统检测不到付款。</p>
+<p>请支付 <b id="payAmount" style="font-size:1.3rem;color:var(--text)"></b></p>
+<p style="font-weight:700;margin:0 0 8px;">支付网络：<span id="payNetLabel"></span></p>
+<img id="payQR" src="" alt="收款二维码" width="200" height="200">
 <p class="pay-addr" id="payAddr"></p>
 <div>
-<button class="copy-btn" id="copyAddrBtn" data-i18n="copy_addr">复制地址</button>
-<button class="check-btn" id="checkBtn" data-i18n="check_paid">我已付款，立即检测</button>
+<button class="copy-btn" id="copyAddrBtn">复制地址</button>
+<button class="check-btn" id="checkBtn">我已付款，立即检测</button>
 </div>
 <p class="status" id="payStatus"></p>
-<p class="pay-note2" data-i18n="pay_note">请务必使用上方选择的网络转账，转错网络资产可能丢失。检测到付款后会自动显示成功。</p>
-<button class="cancel-btn" id="cancelOrder" data-i18n="cancel_order_btn">取消订单</button>
+<p class="pay-note2">请务必使用上方选择的网络转账，转错网络资产可能丢失。检测到付款后会自动显示成功。</p>
+<button class="cancel-btn" id="cancelOrder">取消订单</button>
 </div>
 </section>
 <section id="view-success" class="hidden">
 <div class="success">
 <div class="tick">✅</div>
-<h2 data-i18n="pay_success">支付成功！</h2>
+<h2>支付成功！</h2>
 <p id="orderStatusLine" class="ostatus"></p>
 <div class="order-box" id="orderBox"></div>
-<p class="orefresh" data-i18n="success_note">订单状态由店主在后台更新，本页面每分钟自动刷新，无需重复付款。</p>
-<p><a class="back" href="#" id="backToList2" data-i18n="back_to_products">← 返回商品列表</a></p>
+<p class="orefresh">订单状态由店主在后台更新，本页面每分钟自动刷新，无需重复付款。</p>
+<p><a class="back" href="#" id="backToList2">← 返回商品列表</a></p>
 </div>
 </section>
 <section id="view-myorders" class="hidden">
-<p><a class="back" href="#" id="backToList3" data-i18n="back_to_products">← 返回商品列表</a></p>
-<div class="section-head"><h2 data-i18n="my_orders">我的订单</h2><button class="copy-btn" id="refreshMyOrders" data-i18n="refresh" style="font-size:.8rem;padding:6px 16px;">刷新</button></div>
+<p><a class="back" href="#" id="backToList3">← 返回商品列表</a></p>
+<div class="section-head"><h2>我的订单</h2><button class="copy-btn" id="refreshMyOrders" style="font-size:.8rem;padding:6px 16px;">刷新</button></div>
 <div id="myOrderList"></div>
 <div class="order-box">
-<p style="font-weight:700;margin:0 0 6px;" data-i18n="claim_title">补登订单</p>
-<p class="pay-note2" style="margin:0 0 6px;" data-i18n="claim_desc">如果付款后页面没检测到（比如中途关掉了页面），在这里粘贴交易哈希手动补登，系统会到链上核验这笔转账确实到了店主地址。</p>
-<input class="claim-input" id="claimTx" data-i18n-ph="claim_ph" placeholder="交易哈希（SOL 链请粘贴交易签名）">
+<p style="font-weight:700;margin:0 0 6px;">补登订单</p>
+<p class="pay-note2" style="margin:0 0 6px;">如果付款后页面没检测到（比如中途关掉了页面），在这里粘贴交易哈希手动补登，系统会到链上核验这笔转账确实到了店主地址。</p>
+<input class="claim-input" id="claimTx" placeholder="交易哈希（SOL 链请粘贴交易签名）">
 <div style="margin:6px 0;"><select class="claim-sel" id="claimNetSel" style="width:100%;"></select></div>
 <select class="claim-sel" id="claimProd"></select>
-<div><button class="check-btn" id="claimBtn" data-i18n="claim_btn">核验并补登</button></div>
+<div><button class="check-btn" id="claimBtn">核验并补登</button></div>
 <p class="status" id="claimStatus"></p>
 </div>
 </section>
@@ -145,16 +140,16 @@
 <footer class="site-footer"><div class="wrap"><p class="footer-line">© <span id="year"></span></p></div></footer>
 <div id="authModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999;">
   <div style="background:#fff;border-radius:14px;padding:26px 24px;width:320px;text-align:center;color:#1a1a1a;">
-    <p id="authTitle" style="margin:0 0 4px;font-weight:700;font-size:1.05rem;" data-i18n="auth_login">登录</p>
+    <p id="authTitle" style="margin:0 0 4px;font-weight:700;font-size:1.05rem;">登录</p>
     <p id="authHint" class="pay-note2" style="margin:0 0 6px;color:#6b6b6b;"></p>
-    <input type="email" id="authEmail" class="auth-input" data-i18n-ph="auth_email_ph" placeholder="邮箱" autocomplete="email">
-    <input type="password" id="authPwd" class="auth-input" data-i18n-ph="auth_pwd_ph" placeholder="密码（至少 6 位）" autocomplete="current-password">
+    <input type="email" id="authEmail" class="auth-input" placeholder="邮箱" autocomplete="email">
+    <input type="password" id="authPwd" class="auth-input" placeholder="密码（至少 6 位）" autocomplete="current-password">
     <p id="authErr" style="display:none;color:#b3261e;font-size:.85rem;margin:8px 0 0;"></p>
     <div style="display:flex;gap:10px;margin-top:14px;">
-      <button id="authCancel" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;" data-i18n="auth_cancel">取消</button>
-      <button id="authGo" style="flex:1;padding:10px;border:none;border-radius:8px;background:#1a1a1a;color:#fff;font-weight:700;cursor:pointer;" data-i18n="auth_login">登录</button>
+      <button id="authCancel" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;">取消</button>
+      <button id="authGo" style="flex:1;padding:10px;border:none;border-radius:8px;background:#1a1a1a;color:#fff;font-weight:700;cursor:pointer;">登录</button>
     </div>
-    <p style="margin:12px 0 0;font-size:.85rem;"><a href="#" id="authSwitch" style="color:#1a73e8;" data-i18n="auth_no_account">没有账号？去注册</a></p>
+    <p style="margin:12px 0 0;font-size:.85rem;"><a href="#" id="authSwitch" style="color:#1a73e8;">没有账号？去注册</a></p>
   </div>
 </div>
 <div id="payMethodModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999;">
@@ -205,12 +200,8 @@ function fmtPrice(usd){
 }
 var orderTimer = null, order = null;
 var statusTimer = null, paidOrder = null, paidOrderId = null;
-var OSTATUSTXT = {}, OSTATUS_BADGE = {};
-function buildStatusDicts(){
-  OSTATUSTXT = { pending:t("order_status_pending"), shipped:t("order_status_shipped"), completed:t("order_status_completed") };
-  OSTATUS_BADGE = { unpaid:t("badge_unpaid"), pending:t("badge_pending"), shipped:t("badge_shipped"), completed:t("badge_completed") };
-}
-buildStatusDicts();
+var OSTATUSTXT = { pending:"⏳ 等待发货", shipped:"📦 卖家已发货", completed:"🎉 订单已完成" };
+var OSTATUS_BADGE = { unpaid:"待支付", pending:"待发货", shipped:"已发货", completed:"订单已完成" };
 var searchKw = "";
 /* ===== 登录 / 注册 ===== */
 function renderAuthArea(){
@@ -221,16 +212,16 @@ function renderUserMenu(){
   if(!m) return;
   m.innerHTML = "";
   if(myUser){
-    var em = document.createElement("div"); em.className = "uemail"; em.textContent = myUser.email || t("menu_logged_in");
+    var em = document.createElement("div"); em.className = "uemail"; em.textContent = myUser.email || "已登录";
     m.appendChild(em);
-    var od = document.createElement("button"); od.textContent = t("menu_myorders");
+    var od = document.createElement("button"); od.textContent = "我的订单";
     od.onclick = function(){ toggleUserMenu(false); stopOrder(); stopStatus(); loadMyOrders(); show("view-myorders"); };
     m.appendChild(od);
-    var out = document.createElement("button"); out.textContent = t("menu_logout");
+    var out = document.createElement("button"); out.textContent = "退出";
     out.onclick = function(){ toggleUserMenu(false); if(sb) sb.auth.signOut(); };
     m.appendChild(out);
   } else {
-    var li = document.createElement("button"); li.textContent = t("auth_login");
+    var li = document.createElement("button"); li.textContent = "登录";
     li.onclick = function(){ toggleUserMenu(false); openAuth(""); };
     m.appendChild(li);
   }
@@ -243,9 +234,9 @@ function toggleUserMenu(force){
 }
 function openAuth(hint){
   authMode = "login";
-  document.getElementById("authTitle").textContent = t("auth_login");
-  document.getElementById("authGo").textContent = t("auth_login");
-  document.getElementById("authSwitch").textContent = t("auth_no_account");
+  document.getElementById("authTitle").textContent = "登录";
+  document.getElementById("authGo").textContent = "登录";
+  document.getElementById("authSwitch").textContent = "没有账号？去注册";
   document.getElementById("authHint").textContent = hint || "";
   document.getElementById("authErr").style.display = "none";
   document.getElementById("authModal").classList.remove("hidden");
@@ -257,23 +248,23 @@ document.getElementById("authCancel").onclick = closeAuth;
 document.getElementById("authSwitch").onclick = function(e){
   e.preventDefault();
   authMode = (authMode === "login") ? "signup" : "login";
-  document.getElementById("authTitle").textContent = (authMode === "login") ? t("auth_login") : t("auth_signup");
-  document.getElementById("authGo").textContent = (authMode === "login") ? t("auth_login") : t("auth_signup");
-  document.getElementById("authSwitch").textContent = (authMode === "login") ? t("auth_no_account") : t("auth_has_account");
+  document.getElementById("authTitle").textContent = (authMode === "login") ? "登录" : "注册";
+  document.getElementById("authGo").textContent = (authMode === "login") ? "登录" : "注册";
+  document.getElementById("authSwitch").textContent = (authMode === "login") ? "没有账号？去注册" : "已有账号？去登录";
   document.getElementById("authErr").style.display = "none";
 };
 document.getElementById("authGo").onclick = function(){
   var email = document.getElementById("authEmail").value.trim();
   var pwd = document.getElementById("authPwd").value;
-  if(!email || !pwd) return authError(t("auth_fill_both"));
-  if(pwd.length < 6) return authError(t("auth_pwd_short"));
+  if(!email || !pwd) return authError("请填写邮箱和密码。");
+  if(pwd.length < 6) return authError("密码至少 6 位。");
   document.getElementById("authGo").disabled = true;
   var job = (authMode === "login") ? sb.auth.signInWithPassword({ email: email, password: pwd }) : sb.auth.signUp({ email: email, password: pwd });
   job.then(function(r){
     document.getElementById("authGo").disabled = false;
-    if(r.error) return authError(r.error.message === "Invalid login credentials" ? t("auth_bad_cred") : r.error.message);
+    if(r.error) return authError(r.error.message === "Invalid login credentials" ? "邮箱或密码不对。" : r.error.message);
     if(!pendingNet) closeAuth();
-  }).catch(function(e){ document.getElementById("authGo").disabled = false; authError(t("auth_error_prefix") + e.message); });
+  }).catch(function(e){ document.getElementById("authGo").disabled = false; authError("出错了：" + e.message); });
 };
 document.getElementById("authPwd").addEventListener("keydown", function(e){ if(e.key === "Enter") document.getElementById("authGo").click(); });
 async function refreshAuth(){
@@ -338,21 +329,20 @@ function render(){
     div.querySelector(".nm").textContent=p.name;
     div.querySelector(".ds").textContent=p.desc||"";
     div.querySelector(".pr").textContent=fmtPrice(p.price);
-    div.querySelector(".sold").textContent=t("sold_count",{x:(SOLD[p.id]||0)});
+    div.querySelector(".sold").textContent="已售出 "+(SOLD[p.id]||0)+" 件";
     var left = stockLeft(p);
     var btn = div.querySelector(".buy-btn");
-    btn.textContent = t("buy");
     if(left !== null){
       var stk = div.querySelector(".stk");
       stk.classList.remove("none");
       if(left <= 0){
-        stk.textContent = t("sold_out");
-        btn.textContent = t("sold_out");
+        stk.textContent = "已售罄";
+        btn.textContent = "已售罄";
         btn.disabled = true;
         btn.style.opacity = ".5";
         btn.style.cursor = "not-allowed";
       } else {
-        stk.textContent = t("stock_left",{x:left});
+        stk.textContent = "剩余 " + left + " 件";
         btn.onclick = function(){ startOrder(p); };
       }
     } else {
@@ -413,34 +403,34 @@ function openPayMethods(p){
   var t = document.createElement("p"); t.style.cssText = "margin:0 0 4px;font-weight:700;font-size:1.05rem;"; t.textContent = p.name;
   var pr = document.createElement("p"); pr.style.cssText = "margin:0 0 14px;font-weight:800;font-size:1.15rem;color:var(--text);"; pr.textContent = fmtPrice(p.price);
   box.appendChild(t); box.appendChild(pr);
-  box.appendChild(pmTitle(t("pm_choose")));
-  var b1 = pmBtn(ICON_USDT, t("pm_usdt"));
+  box.appendChild(pmTitle("选择支付方式"));
+  var b1 = pmBtn(ICON_USDT, "USDT支付");
   b1.onclick = function(){ showPayNets(p); };
-  var b2 = pmBtn('<span class="pm-emoji">💳</span>', t("pm_other"));
+  var b2 = pmBtn('<span class="pm-emoji">💳</span>', "其他支付");
   b2.onclick = showComingSoon;
   box.appendChild(b1); box.appendChild(b2);
-  box.appendChild(pmBack(t("pm_cancel"), closePayMethods));
+  box.appendChild(pmBack("取消", closePayMethods));
   document.getElementById("payMethodModal").classList.remove("hidden");
 }
 function showPayNets(p){
   var box = document.getElementById("payMethodBox");
   box.innerHTML = "";
-  box.appendChild(pmTitle(t("pm_choose_net")));
+  box.appendChild(pmTitle("选择支付网络"));
   NET_ORDER.forEach(function(key){
     var net = NETS[key];
     var b = pmBtn('<img src="'+NET_ICON[key]+'" width="30" height="30" style="border-radius:50%;flex-shrink:0;display:block" alt="">', net.label);
     b.onclick = (function(k){ return function(){ closePayMethods(); showOrderView(p); chooseNet(k, p); }; })(key);
     box.appendChild(b);
   });
-  box.appendChild(pmBack(t("pm_back"), function(){ openPayMethods(p); }));
+  box.appendChild(pmBack("← 返回", function(){ openPayMethods(p); }));
 }
 function showComingSoon(){
   var box = document.getElementById("payMethodBox");
   box.innerHTML = "";
   var e = document.createElement("p"); e.style.cssText = "font-size:2.4rem;margin:6px 0;"; e.textContent = "🚧";
-  var t = document.createElement("p"); t.style.cssText = "margin:0 0 14px;font-weight:700;"; t.textContent = t("pm_other_soon");
+  var t = document.createElement("p"); t.style.cssText = "margin:0 0 14px;font-weight:700;"; t.textContent = "其他支付即将上线，敬请期待";
   box.appendChild(e); box.appendChild(t);
-  box.appendChild(pmBack(t("pm_back"), function(){ openPayMethods(payMethodProduct); }));
+  box.appendChild(pmBack("← 返回", function(){ openPayMethods(payMethodProduct); }));
 }
 function closePayMethods(){ document.getElementById("payMethodModal").classList.add("hidden"); }
 document.getElementById("payMethodModal").addEventListener("click", function(e){ if(e.target && e.target.id === "payMethodModal") closePayMethods(); });
@@ -454,23 +444,23 @@ function showOrderView(p){
 }
 function startOrder(p){
   var left0 = stockLeft(p);
-  if(left0 !== null && left0 <= 0){ alert(t("alert_soldout")); return; }
+  if(left0 !== null && left0 <= 0){ alert("这个商品已经售罄了。"); return; }
   openPayMethods(p);
 }
 function setStatus(html){ document.getElementById("payStatus").innerHTML=html; }
 function chooseNet(key,p){
-  if(!myUser){ pendingNet = { key:key, p:p }; openAuth(t("auth_need_login")); return; }
+  if(!myUser){ pendingNet = { key:key, p:p }; openAuth("进入付款需要先登录 / 注册，浏览商品不用登录。"); return; }
   sb.from("orders").insert({ user_id: myUser.id, product_id: p.id, product_name: p.name, price: p.price, chain: key, status: "unpaid" }).select("id").then(function(r){
     if(r.error) throw r.error;
     startPayPanel(key, p, (r.data && r.data[0]) ? r.data[0].id : null);
   }).catch(function(e){
-    var msg = String((e && e.message) || e || t("err_unknown"));
+    var msg = String((e && e.message) || e || "未知错误");
     if(/jwt|expired|unauthorized|401|invalid token|auth/i.test(msg)){
       myUser = null; renderAuthArea();
       pendingNet = { key:key, p:p };
-      openAuth(t("auth_expired"));
+      openAuth("登录已过期，请重新登录后再试。");
     } else {
-      alert(t("order_create_fail",{x:msg}));
+      alert("创建待支付订单失败：" + msg);
       startPayPanel(key, p, null);
     }
   });
@@ -484,20 +474,20 @@ function startPayPanel(key,p,dbId){
   document.getElementById("payAddr").textContent=net.seller;
   document.getElementById("payQR").src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data="+encodeURIComponent(net.seller);
   document.getElementById("payPanel").classList.remove("hidden");
-  setStatus(t("status_connecting"));
+  setStatus("正在连接网络…");
   var kind = net.kind || "evm";
   if(kind==="evm"){
     rpc(net.rpc,"eth_blockNumber",[]).then(function(blk){
       order={key:key,net:net,prod:p,dbId:dbId,need:toUnits(p.price,net.dec),from:blk,errs:0,deadline:Date.now()+30*60*1000};
       beginPoll();
-    }).catch(function(){ setStatus(t("status_net_fail",{btn:t("check_paid")})); });
+    }).catch(function(){ setStatus("网络连接失败，请检查网络后点「我已付款，立即检测」重试。"); });
   } else {
     order={key:key,net:net,prod:p,dbId:dbId,need:toUnits(p.price,net.dec),lastSig:null,lastVer:"-1",errs:0,deadline:Date.now()+30*60*1000};
     beginPoll();
   }
 }
 function beginPoll(){
-  setStatus(t("status_waiting"));
+  setStatus('<span class="spin">⏳</span> 等待付款…（每 15 秒自动检测一次）');
   poll();
   orderTimer=setInterval(poll,15000);
 }
@@ -512,15 +502,15 @@ function resumePay(o){
 }
 function cancelOrder(id){
   if(!sb || !id) return;
-  if(!confirm(t("confirm_cancel"))) return;
+  if(!confirm("确定取消这笔待支付订单吗？")) return;
   sb.from("orders").delete().eq("id", id).then(function(r){
-    if(r.error){ alert(t("cancel_fail",{x:r.error.message})); }
+    if(r.error){ alert("取消失败：" + r.error.message); }
     loadMyOrders();
-  }).catch(function(e){ alert(t("cancel_fail",{x:(e.message || e)})); loadMyOrders(); });
+  }).catch(function(e){ alert("取消失败：" + (e.message || e)); loadMyOrders(); });
 }
 function poll(){
   if(!order) return;
-  if(Date.now()>order.deadline){ stopOrder(); setStatus(t("order_timeout")); return; }
+  if(Date.now()>order.deadline){ stopOrder(); setStatus("订单已超时（30 分钟）。如已付款请联系店主确认，或重新下单。"); return; }
   var kind = order.net.kind || "evm";
   if(kind==="solana") pollSolana();
   else if(kind==="aptos") pollAptos();
@@ -529,12 +519,12 @@ function poll(){
 function pollErr(){
   if(!order) return;
   order.errs++;
-  setStatus(t("status_retry",{x:order.errs}));
+  setStatus("检测遇到网络波动，正在重试…（"+order.errs+"）");
 }
 function pollWait(){
   if(!order) return;
   order.errs=0;
-  setStatus(t("status_waiting"));
+  setStatus('<span class="spin">⏳</span> 等待付款…（每 15 秒自动检测一次）');
 }
 function pollEvm(){
   var topic = order.net.topicAddr || toTopic(order.net.seller);
@@ -652,8 +642,8 @@ function onPaid(tx){
   var key=order.key, net=order.net, prod=order.prod, dbId=order.dbId;
   var txl = (net.kind==="solana") ? String(tx) : String(tx).toLowerCase();
   order.lastTry=txl;
-  if(!sb || !myUser){ stopOrder(); setStatus(t("auth_invalid_check",{btn:t("check_paid")})); return; }
-  setStatus(t("status_found"));
+  if(!sb || !myUser){ stopOrder(); setStatus("登录已失效，请重新登录后再点「我已付款，立即检测」。"); return; }
+  setStatus('<span class="spin">⏳</span> 已检测到付款，正在登记订单…');
   var job;
   if(dbId){
     job = sb.from("orders").update({ tx: txl, status: "pending" }).eq("id", dbId).select("id").then(function(r){ if(r.error) throw r.error; return dbId; });
@@ -671,26 +661,26 @@ function onPaid(tx){
       sb.from("orders").select("id").eq("user_id", myUser.id).eq("tx", txl).limit(1).then(function(r2){
         var id = (r2.data && r2.data[0]) ? r2.data[0].id : null;
         if(id){ showPaidSuccess(txl, key, net, prod, id); }
-        else { setStatus(t("tx_used_other")); }
+        else { setStatus("这笔交易已被其他订单登记，请确认是你本人的付款后再试。"); }
       });
     } else {
-      setStatus(t("order_reg_fail",{x:(e.message || e),btn:t("check_paid")}));
+      setStatus("订单登记失败：" + (e.message || e) + "。请点「我已付款，立即检测」重试。");
     }
   });
 }
 function showPaidSuccess(txl, key, net, prod, orderId){
   stopOrder(); show("view-success");
-  paidOrder={ tx:txl, net:net, name:prod.name, price:prod.price, time:new Date().toLocaleString(({ "zh-CN":"zh-CN", "zh-TW":"zh-TW", "en":"en-US" })[I18N.getLang()]||"zh-CN",{hour12:false}) };
+  paidOrder={ tx:txl, net:net, name:prod.name, price:prod.price, time:new Date().toLocaleString("zh-CN",{hour12:false}) };
   paidOrderId = orderId;
   var box=document.getElementById("orderBox");
   function row(k,v){ var d=document.createElement("div"); d.className="rowline"; var a=document.createElement("span"); a.textContent=k; var b=document.createElement("span"); b.textContent=v; d.appendChild(a); d.appendChild(b); return d; }
   box.innerHTML="";
-  box.appendChild(row(t("row_order_id"), shortId(orderId)));
-  box.appendChild(row(t("row_product"), paidOrder.name));
-  box.appendChild(row(t("row_amount"), fmtPrice(paidOrder.price)+"（"+net.label+"）"));
-  box.appendChild(row(t("row_pay_time"), paidOrder.time));
+  box.appendChild(row("订单号", shortId(orderId)));
+  box.appendChild(row("商品", paidOrder.name));
+  box.appendChild(row("金额", fmtPrice(paidOrder.price)+"（"+net.label+"）"));
+  box.appendChild(row("付款时间", paidOrder.time));
   var txrow=document.createElement("div"); txrow.className="rowline";
-  var ka=document.createElement("span"); ka.textContent=t("row_tx");
+  var ka=document.createElement("span"); ka.textContent="交易哈希";
   var va=document.createElement("span"); var link=document.createElement("a"); link.href=net.scan+txl; link.target="_blank"; link.rel="noopener"; link.textContent=txl.slice(0,10)+"…"+txl.slice(-8); link.style.color="var(--link)"; va.appendChild(link);
   txrow.appendChild(ka); txrow.appendChild(va); box.appendChild(txrow);
   setOrderStatus("pending");
@@ -711,28 +701,28 @@ function stopStatus(){ if(statusTimer){ clearInterval(statusTimer); statusTimer=
 function fmtTime(iso){ try{ var d=new Date(iso); var p=function(n){return String(n).padStart(2,"0");}; return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+" "+p(d.getHours())+":"+p(d.getMinutes()); }catch(e){ return ""; } }
 function loadMyOrders(){
   if(!myUser || !sb) return;
-  document.getElementById("myOrderList").innerHTML = '<p class="empty">' + t("myorders_loading") + '</p>';
+  document.getElementById("myOrderList").innerHTML = '<p class="empty">加载中…</p>';
   sb.from("orders").select("*").order("created_at",{ascending:false}).then(function(r){
     var list = r.data || [];
     var box = document.getElementById("myOrderList"); box.innerHTML = "";
-    if(!list.length){ box.innerHTML = '<div class="empty">' + t("myorders_empty") + '</div>'; return; }
+    if(!list.length){ box.innerHTML = '<div class="empty">还没有订单</div>'; return; }
     list.forEach(function(o){
       var div = document.createElement("div"); div.className = "ord";
       var t = document.createElement("div"); t.className = "t";
-      t.textContent = (o.product_name || t("row_product")) + " · " + fmtPrice(o.price) + " ";
+      t.textContent = (o.product_name || "商品") + " · " + fmtPrice(o.price) + " ";
       var badge = document.createElement("span"); badge.className = "obadge " + (o.status||"pending"); badge.textContent = OSTATUS_BADGE[o.status] || o.status;
       t.appendChild(badge);
       var d = document.createElement("div"); d.className = "d";
       var net = NETS[o.chain] || {};
       d.innerHTML = "";
-      d.appendChild(document.createTextNode(t("order_row_line",{id:shortId(o.id),time:fmtTime(o.created_at),net:(net.label || o.chain || "")})));
-      if(o.tx && net.scan){ var a=document.createElement("a"); a.href=net.scan+o.tx; a.target="_blank"; a.rel="noopener"; a.style.color="var(--link)"; a.textContent=t("tx_link",{x:String(o.tx).slice(0,10)}); d.appendChild(a); }
+      d.appendChild(document.createTextNode("订单号 " + shortId(o.id) + " · " + fmtTime(o.created_at) + " · " + (net.label || o.chain || "") + " · "));
+      if(o.tx && net.scan){ var a=document.createElement("a"); a.href=net.scan+o.tx; a.target="_blank"; a.rel="noopener"; a.style.color="var(--link)"; a.textContent="交易 "+String(o.tx).slice(0,10)+"…"; d.appendChild(a); }
       div.appendChild(t); div.appendChild(d);
       if((o.status || "") === "unpaid"){
         var ops = document.createElement("div"); ops.style.marginTop = "8px"; ops.style.display = "flex"; ops.style.gap = "8px";
-        var go = document.createElement("button"); go.className = "check-btn"; go.style.fontSize = ".82rem"; go.style.padding = "6px 18px"; go.textContent = t("go_pay");
+        var go = document.createElement("button"); go.className = "check-btn"; go.style.fontSize = ".82rem"; go.style.padding = "6px 18px"; go.textContent = "去支付";
         go.onclick = function(){ resumePay(o); };
-        var cancel = document.createElement("button"); cancel.className = "textbtn"; cancel.textContent = t("cancel_order_btn");
+        var cancel = document.createElement("button"); cancel.className = "textbtn"; cancel.textContent = "取消订单";
         cancel.onclick = function(){ cancelOrder(o.id); };
         ops.appendChild(go); ops.appendChild(cancel);
         div.appendChild(ops);
@@ -741,10 +731,9 @@ function loadMyOrders(){
     });
   });
 }
-document.getElementById("userBtn").onclick = function(e){ e.stopPropagation(); if(window.I18N) I18N.toggleLangMenu(false); toggleUserMenu(); };
+document.getElementById("userBtn").onclick = function(e){ e.stopPropagation(); toggleUserMenu(); };
 document.addEventListener("click", function(){ toggleUserMenu(false); });
 document.getElementById("refreshMyOrders").onclick = loadMyOrders;
-if(window.I18N) I18N.onChange(function(){ buildStatusDicts(); renderUserMenu(); render(); if(myUser) loadMyOrders(); });
 /* ===== 补登订单 ===== */
 var claimNet = "bsc";
 function fillClaimNets(){
@@ -765,45 +754,45 @@ function fillClaimProds(){
 }
 function setClaim(msg){ document.getElementById("claimStatus").textContent = msg; }
 document.getElementById("claimBtn").onclick = function(){
-  if(!myUser || !sb) return setClaim(t("claim_need_login"));
+  if(!myUser || !sb) return setClaim("请先登录。");
   var net0 = NETS[claimNet], kind0 = net0.kind || "evm";
   var txRaw = document.getElementById("claimTx").value.trim();
   var tx = (kind0==="solana") ? txRaw : txRaw.toLowerCase();
   if(kind0==="solana"){
-    if(!/^[1-9A-HJ-NP-Za-km-z]{32,88}$/.test(tx)) return setClaim(t("claim_bad_sig_sol"));
+    if(!/^[1-9A-HJ-NP-Za-km-z]{32,88}$/.test(tx)) return setClaim("Solana 交易签名格式不对，请粘贴完整的交易签名。");
   } else if(claimNet==="tron"){
-    if(!/^(0x)?[0-9a-f]{64}$/.test(tx)) return setClaim(t("claim_bad_hash_tron"));
+    if(!/^(0x)?[0-9a-f]{64}$/.test(tx)) return setClaim("TRON 交易哈希格式不对，应为 64 位十六进制（可带 0x）。");
     tx = "0x" + tx.replace(/^0x/, "");
-  } else if(!/^0x[0-9a-f]{64}$/.test(tx)) return setClaim(t("claim_bad_hash_evm"));
+  } else if(!/^0x[0-9a-f]{64}$/.test(tx)) return setClaim("交易哈希格式不对，应为 0x 开头的 64 位十六进制。");
   var prod = null;
   var pid = document.getElementById("claimProd").value;
   PRODUCTS.forEach(function(p){ if(p.id === pid) prod = p; });
-  if(!prod) return setClaim(t("claim_need_product"));
+  if(!prod) return setClaim("请先选择商品（商品列表加载失败时无法补登）。");
   var net = NETS[claimNet], need = toUnits(prod.price, net.dec);
-  setClaim(t("claim_verifying"));
+  setClaim("正在链上核验这笔转账…");
   var btn = this; btn.disabled = true;
   sb.from("orders").select("id").eq("user_id", myUser.id).eq("tx", tx).limit(1).then(function(dup){
-    if(dup.data && dup.data.length) throw { claimMsg: t("claim_dup") };
+    if(dup.data && dup.data.length) throw { claimMsg: "这笔交易已经登记过了，无需重复补登。" };
     return verifyClaimTx(net, tx, need);
   }).then(function(ok){
-    if(!ok) throw { claimMsg: t("claim_no_transfer",{x:prod.price}) };
+    if(!ok) throw { claimMsg: "核验失败：这笔交易里没有给店主地址转 " + prod.price + " USDT 的记录，请检查哈希和网络是否选对。" };
     return sb.from("orders").insert({ user_id: myUser.id, product_id: prod.id, product_name: prod.name, price: prod.price, chain: claimNet, tx: tx, status: "pending" });
   }).then(function(ins){
     if(ins.error){
-      if(ins.error.code === "23505") throw { claimMsg: t("claim_dup_account") };
-      throw { claimMsg: t("claim_fail",{x:ins.error.message}) };
+      if(ins.error.code === "23505") throw { claimMsg: "这笔交易已经被登记过了（一笔交易只能绑定一个账号），无需重复补登。" };
+      throw { claimMsg: "登记失败：" + ins.error.message };
     }
-    setClaim(t("claim_ok"));
+    setClaim("补登成功！订单状态为「待发货」。");
     document.getElementById("claimTx").value = "";
     loadMyOrders(); loadSold().then(render);
   }).catch(function(e){
-    setClaim((e && e.claimMsg) ? e.claimMsg : (t("auth_error_prefix") + (e.message || e)));
+    setClaim((e && e.claimMsg) ? e.claimMsg : ("出错了：" + (e.message || e)));
   }).finally(function(){ btn.disabled = false; });
 };
-document.getElementById("checkBtn").onclick=function(){ if(order) poll(); else setStatus(t("status_choose_net")); };
+document.getElementById("checkBtn").onclick=function(){ if(order) poll(); else setStatus("请先选择支付网络。"); };
 document.getElementById("copyAddrBtn").onclick=function(){
   var t=((order&&order.net)?order.net.seller:NETS.bsc.seller), btn=this;
-  function done(){ btn.textContent=t("copied"); setTimeout(function(){ btn.textContent=t("copy_addr"); },1500); }
+  function done(){ btn.textContent="已复制 ✓"; setTimeout(function(){ btn.textContent="复制地址"; },1500); }
   function fallback(){ var ta=document.createElement("textarea"); ta.value=t; document.body.appendChild(ta); ta.select(); try{ document.execCommand("copy"); }catch(e){} ta.remove(); done(); }
   if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(done).catch(fallback); } else fallback();
 };
@@ -814,19 +803,19 @@ document.getElementById("backToList3").onclick=backList;
 document.getElementById("cancelOrder").onclick=function(){
   var dbId = order && order.dbId;
   if(dbId && sb && myUser){
-    if(!confirm(t("confirm_cancel"))) return;
+    if(!confirm("确定取消这笔待支付订单吗？")) return;
     sb.from("orders").delete().eq("id", dbId).then(function(){ backList(); }).catch(function(){ backList(); });
   } else backList();
 };
 </script>
 <div id="gateModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999;">
   <div style="background:#fff;border-radius:14px;padding:26px 24px;width:300px;text-align:center;color:#1a1a1a;">
-    <p style="margin:0 0 12px;font-weight:700;" data-i18n="gate_title">请输入后台密码</p>
-    <input type="password" id="gatePwd" data-i18n-ph="gate_pwd_ph" placeholder="密码" style="width:100%;padding:10px 12px;font-size:1rem;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;" autocomplete="off">
-    <p id="gateErr" style="display:none;color:#b3261e;font-size:.85rem;margin:8px 0 0;" data-i18n="gate_wrong">密码不对，再试试</p>
+    <p style="margin:0 0 12px;font-weight:700;">请输入后台密码</p>
+    <input type="password" id="gatePwd" placeholder="密码" style="width:100%;padding:10px 12px;font-size:1rem;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;" autocomplete="off">
+    <p id="gateErr" style="display:none;color:#b3261e;font-size:.85rem;margin:8px 0 0;">密码不对，再试试</p>
     <div style="display:flex;gap:10px;margin-top:14px;">
-      <button id="gateCancel" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;" data-i18n="gate_cancel">取消</button>
-      <button id="gateOk" style="flex:1;padding:10px;border:none;border-radius:8px;background:#1a1a1a;color:#fff;font-weight:700;cursor:pointer;" data-i18n="gate_enter">进入</button>
+      <button id="gateCancel" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;">取消</button>
+      <button id="gateOk" style="flex:1;padding:10px;border:none;border-radius:8px;background:#1a1a1a;color:#fff;font-weight:700;cursor:pointer;">进入</button>
     </div>
   </div>
 </div>
