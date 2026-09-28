@@ -8,7 +8,8 @@ const NETS = {
   eth:    { label: "Ethereum", kind: "evm", rpc: "https://ethereum-rpc.publicnode.com", token: "0xdAC17F958D2ee523a2206206994597C13D831ec7", dec: 6, blockTime: 12, chunk: 2000, seller: "0x5a93d426357cfc7b83d27cec9d4776b05fc73149" },
   plasma: { label: "Plasma", kind: "evm", rpc: "https://rpc.plasma.to", token: "0xB8CE59FC3717Ada4C02eadf9682A9e934F625ebb", dec: 6, blockTime: 2, chunk: 5000, seller: "0x5a93d426357cfc7b83d27cec9d4776b05fc73149" },
   aptos:  { label: "Aptos", kind: "aptos", rpc: "https://fullnode.mainnet.aptoslabs.com/v1", token: "0x357b0b74bc833e95a115ad22604854d6b0fca151cecd94111770e5d6ffc9dc2b", dec: 6, seller: "0x2727508a879fa5df26da24be64481c49020d8b99ce1219b153e7c14bd7c489b2" },
-  sol:    { label: "Solana", kind: "solana", rpc: "https://api.mainnet-beta.solana.com", token: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB", dec: 6, seller: "4ubaQ8zwDZcxSeAJPQbuqAVhcspkyPumRQnRDePnshos" }
+  sol:    { label: "Solana", kind: "solana", rpc: "https://api.mainnet-beta.solana.com", token: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB", dec: 6, seller: "4ubaQ8zwDZcxSeAJPQbuqAVhcspkyPumRQnRDePnshos" },
+  tron:   { label: "Tron", kind: "evm", rpc: "https://api.trongrid.io/jsonrpc", token: "0xa614f803b6fd780986a42c78ec9c7f77e6ded13c", dec: 6, blockTime: 3, chunk: 2000, seller: "TB3CqRHMjTY1fNt1GzmJeUg4Y4owTfjm4j", topicAddr: "0x0000000000000000000000000bb9a6a111889e72315516b0a5074c314ee3b87f" }
 };
 const INIT_DAYS = 3; // 首次运行向前扫描的天数（EVM 链）
 
@@ -93,18 +94,24 @@ function addOrder(key, net, txRaw, valueRaw, timeMs, fromAddr) {
 }
 
 async function scanEvm(key, net) {
-  const topic = toTopic(net.seller);
+  const topic = net.topicAddr || toTopic(net.seller);
   const latest = parseInt(await rpc(net.rpc, "eth_blockNumber", []), 16);
   let from = cursor[key] ? cursor[key] + 1 : latest - Math.ceil(INIT_DAYS * 86400 / net.blockTime);
   if (from < 0) from = 0;
   if (from > latest) { cursor[key] = latest; return; }
   const found = [];
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  async function getLogs(a, b) {
+    const logs = await rpc(net.rpc, "eth_getLogs", [{ fromBlock: "0x" + a.toString(16), toBlock: "0x" + b.toString(16), address: net.token, topics: [TRANSFER, null, topic] }]);
+    if (!Array.isArray(logs)) throw new Error("unexpected result shape");
+    return logs;
+  }
   // 从最新向最旧扫描，遇到归档限制即停止（公共节点只允许查最近一段）
   for (let b = latest; b > from; ) {
     const a = Math.max(from, b - net.chunk);
-    let logs = [];
+    let logs;
     try {
-      logs = await rpc(net.rpc, "eth_getLogs", [{ fromBlock: "0x" + a.toString(16), toBlock: "0x" + b.toString(16), address: net.token, topics: [TRANSFER, null, topic] }]);
+      logs = await getLogs(a, b);
     } catch (e) {
       if (/archive/i.test(e.message)) break;
       if (/exceeds max results|too many results|query.*too large|range too large/i.test(e.message) && (b - a) > 200) {
@@ -112,15 +119,20 @@ async function scanEvm(key, net) {
         console.log("shrink chunk", key, "to", net.chunk);
         continue;
       }
-      console.log("chunk failed", key, a, b, e.message);
-      b = a - 1;
-      continue;
+      await sleep(3000); // 可能是限流，等一下重试一次
+      try { logs = await getLogs(a, b); }
+      catch (e2) {
+        console.log("chunk failed", key, a, b, e2.message);
+        b = a - 1;
+        continue;
+      }
     }
     for (const l of logs) {
       if (BigInt(l.data) <= 0n) continue;
       found.push({ tx: l.transactionHash, value: BigInt(l.data), block: l.blockNumber, fromAddr: "0x" + l.topics[1].slice(26) });
     }
     b = a - 1;
+    await sleep(400); // 避免触发公共节点限流
   }
   const tmap = {};
   for (const blk of [...new Set(found.map(f => f.block))]) {
