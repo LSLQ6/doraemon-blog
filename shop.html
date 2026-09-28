@@ -42,6 +42,12 @@
 .hidden { display:none !important; }
 .pay-note2 { color:var(--muted); font-size:.83rem; }
 .textbtn { background:none; border:1px solid var(--border); border-radius:999px; padding:6px 14px; color:var(--text); cursor:pointer; font-size:.85rem; }
+.umenu-wrap { position:relative; }
+.umenu { position:absolute; right:0; top:calc(100% + 10px); background:var(--card); border:1px solid var(--border); border-radius:12px; min-width:170px; box-shadow:0 10px 30px rgba(0,0,0,.14); z-index:200; overflow:hidden; }
+.umenu .uemail { padding:10px 14px; font-size:.78rem; color:var(--muted); border-bottom:1px solid var(--border); word-break:break-all; }
+.umenu button { display:block; width:100%; text-align:left; padding:11px 14px; background:none; border:none; font-size:.92rem; color:var(--text); cursor:pointer; }
+.umenu button:hover { background:rgba(128,128,128,.12); }
+.umenu button + button { border-top:1px solid var(--border); }
 .who { font-size:.78rem; color:var(--muted); max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .auth-input { width:100%; padding:10px 12px; font-size:1rem; border:1px solid #ddd; border-radius:8px; box-sizing:border-box; margin:6px 0; }
 .ord { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin:10px 0; }
@@ -63,10 +69,12 @@
 <nav class="main-nav">
 <a href="index.html">文章</a>
 <a href="shop.html">购物</a>
-<a href="#" id="myOrdersLink" class="hidden">我的订单</a>
 <button class="icon-btn" id="searchToggle" aria-label="搜索">🔍</button>
 <button class="icon-btn" id="themeToggle" aria-label="切换深色模式">🌙</button>
-<span id="authArea"></span>
+<div class="umenu-wrap">
+<button class="icon-btn" id="userBtn" aria-label="用户菜单">👤</button>
+<div class="umenu hidden" id="userMenu"></div>
+</div>
 </nav>
 </div>
 <div class="wrap search-bar hidden" id="searchBar">
@@ -167,22 +175,32 @@ var OSTATUS_BADGE = { unpaid:"待支付", pending:"待发货", shipped:"已发�
 var searchKw = "";
 /* ===== 登录 / 注册 ===== */
 function renderAuthArea(){
-  var area = document.getElementById("authArea");
-  var link = document.getElementById("myOrdersLink");
+  renderUserMenu();
+}
+function renderUserMenu(){
+  var m = document.getElementById("userMenu");
+  if(!m) return;
+  m.innerHTML = "";
   if(myUser){
-    link.classList.remove("hidden");
-    area.innerHTML = "";
-    var who = document.createElement("span"); who.className = "who"; who.textContent = myUser.email || "";
-    var out = document.createElement("button"); out.className = "textbtn"; out.textContent = "退出";
-    out.onclick = function(){ if(sb) sb.auth.signOut(); };
-    area.appendChild(who); area.appendChild(out);
+    var em = document.createElement("div"); em.className = "uemail"; em.textContent = myUser.email || "已登录";
+    m.appendChild(em);
+    var od = document.createElement("button"); od.textContent = "我的订单";
+    od.onclick = function(){ toggleUserMenu(false); stopOrder(); stopStatus(); loadMyOrders(); show("view-myorders"); };
+    m.appendChild(od);
+    var out = document.createElement("button"); out.textContent = "退出";
+    out.onclick = function(){ toggleUserMenu(false); if(sb) sb.auth.signOut(); };
+    m.appendChild(out);
   } else {
-    link.classList.add("hidden");
-    area.innerHTML = "";
-    var b = document.createElement("button"); b.className = "textbtn"; b.textContent = "登录";
-    b.onclick = function(){ openAuth(""); };
-    area.appendChild(b);
+    var li = document.createElement("button"); li.textContent = "登录";
+    li.onclick = function(){ toggleUserMenu(false); openAuth(""); };
+    m.appendChild(li);
   }
+}
+function toggleUserMenu(force){
+  var m = document.getElementById("userMenu");
+  if(!m) return;
+  var showIt = (typeof force === "boolean") ? force : m.classList.contains("hidden");
+  m.classList.toggle("hidden", !showIt);
 }
 function openAuth(hint){
   authMode = "login";
@@ -494,7 +512,8 @@ function loadMyOrders(){
     });
   });
 }
-document.getElementById("myOrdersLink").onclick = function(e){ e.preventDefault(); stopOrder(); stopStatus(); loadMyOrders(); show("view-myorders"); };
+document.getElementById("userBtn").onclick = function(e){ e.stopPropagation(); toggleUserMenu(); };
+document.addEventListener("click", function(){ toggleUserMenu(false); });
 document.getElementById("refreshMyOrders").onclick = loadMyOrders;
 /* ===== 补登订单 ===== */
 var claimNet = "bsc";
