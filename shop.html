@@ -87,34 +87,7 @@
 .obadge.cancelled { background:#fdecea; color:#b3261e; }
 .claim-input { width:100%; padding:10px 12px; font-size:.9rem; border:1px solid var(--border); border-radius:8px; box-sizing:border-box; background:var(--bg); color:var(--text); margin:6px 0; }
 .claim-sel { width:100%; padding:10px; font-size:.9rem; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text); margin:6px 0; }
-/* ===== 管理员订单管理（我的订单内嵌，仅管理员可见） ===== */
-.adm-tabs { display:flex; gap:8px; margin:0 0 14px; }
-.adm-tabs button { flex:1; padding:10px; font-size:.95rem; font-weight:700; border:1px solid var(--border); border-radius:10px; background:var(--card); color:var(--muted); cursor:pointer; }
-.adm-tabs button.active { background:var(--text); border-color:var(--text); color:var(--bg); }
-.adm-tag { display:inline-block; font-size:.72rem; font-weight:700; background:#1a1a1a; color:#fff; border-radius:999px; padding:2px 10px; vertical-align:middle; margin-left:6px; }
-.adm-search { display:flex; gap:8px; margin:0 0 8px; flex-wrap:wrap; }
-.adm-search input.claim-input { flex:2; min-width:140px; margin:0; }
-.adm-search select.claim-sel { flex:1; min-width:110px; margin:0; }
-.adm-search button { padding:10px 18px; font-size:.9rem; font-weight:700; border:none; border-radius:8px; background:var(--text); color:var(--bg); cursor:pointer; }
-.adm-search button.ghost { background:var(--card); color:var(--text); border:1px solid var(--border); }
-.adm-msg { font-size:.85rem; margin:6px 0; min-height:1.2em; }
-.adm-msg.ok { color:#2e7d32; }
-.adm-msg.err { color:#b3261e; }
-.adm-msg.info { color:#1a56db; }
-.ord .ops { margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-button.mini { padding:7px 14px; font-size:.85rem; font-weight:700; color:#fff; background:#1d5fa8; border:none; border-radius:8px; cursor:pointer; }
-button.mini.green { background:#2e7d32; }
-button.mini.red { background:#b3261e; }
-button.mini:disabled { opacity:.55; cursor:wait; }
-.adm-stat { margin:16px 0; font-size:.9rem; }
-.adm-stat table { width:100%; border-collapse:collapse; margin-top:8px; font-size:.88rem; }
-.adm-stat th, .adm-stat td { border:1px solid var(--border); padding:7px 8px; text-align:center; }
-.adm-token { margin:14px 0; border:1px solid var(--border); border-radius:10px; padding:10px 14px; background:var(--card); }
-.adm-token summary { cursor:pointer; font-weight:700; font-size:.9rem; }
-.adm-token .hint { color:var(--muted); font-size:.83rem; margin:8px 0; }
-.ship-modal { position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; z-index:9999; padding:16px; }
-.ship-modal .box { background:var(--card); color:var(--text); border-radius:14px; padding:22px; width:100%; max-width:440px; max-height:85vh; overflow:auto; }
-.ship-modal label { display:block; font-weight:700; margin:10px 0 6px; font-size:.9rem; }
+
 </style>
 </head>
 <body>
@@ -175,11 +148,6 @@ button.mini:disabled { opacity:.55; cursor:wait; }
 </section>
 <section id="view-myorders" class="hidden">
 <p><a class="back" href="#" id="backToList3">← 返回商品列表</a></p>
-<div id="orderTabs" class="adm-tabs hidden">
-<button id="tabBuyer" class="active">我的订单</button>
-<button id="tabAdmin">订单管理</button>
-</div>
-<div id="buyerOrdersWrap">
 <div class="section-head"><h2>我的订单</h2><button class="copy-btn" id="refreshMyOrders" style="font-size:.8rem;padding:6px 16px;">刷新</button></div>
 <div id="myOrderList"></div>
 <div class="order-box">
@@ -191,45 +159,7 @@ button.mini:disabled { opacity:.55; cursor:wait; }
 <div><button class="check-btn" id="claimBtn">核验并补登</button></div>
 <p class="status" id="claimStatus"></p>
 </div>
-</div>
-<div id="adminOrdersWrap" class="hidden">
-<div class="section-head"><h2>订单管理 <span class="adm-tag">管理员</span></h2><button class="copy-btn" id="refreshAdminOrders" style="font-size:.8rem;padding:6px 16px;">刷新</button></div>
-<div class="adm-search">
-<input class="claim-input" id="adminOrderQ" placeholder="订单号查询：输入8位订单号">
-<button id="adminOrderSearchBtn">查询</button>
-<button id="adminOrderClearBtn" class="ghost">清除</button>
-</div>
-<div class="adm-search">
-<select class="claim-sel" id="adminStatusFilter">
-<option value="">全部状态</option>
-<option value="unpaid">待支付</option>
-<option value="pending">待发货</option>
-<option value="shipped">已发货</option>
-<option value="completed">已完成</option>
-<option value="cancelled">已撤销</option>
-</select>
-</div>
-<p class="adm-msg" id="adminOrderMsg"></p>
-<div id="adminOrderList"></div>
-<div id="adminStatBox" class="adm-stat"></div>
-<details class="adm-token">
-<summary>发货邮件通知设置（可选）</summary>
-<p class="hint">填入有仓库写权限的 GitHub token 后，虚拟商品发货时会触发邮件通知买家；不填则只更新订单状态，买家可在「我的订单」查看发货内容。关闭页面即清除。</p>
-<input type="password" id="adminGhToken" class="claim-input" placeholder="粘贴 GitHub token（只保存在本浏览器）">
-</details>
-</div>
 </section>
-<div id="admShipModal" class="ship-modal">
-<div class="box">
-<h3 id="admShipTitle" style="margin:0 0 4px;"></h3>
-<div id="admShipBody"></div>
-<p id="admShipStatus" style="color:#b3261e;font-size:.85rem;min-height:1.2em;margin:8px 0 0;"></p>
-<div style="display:flex;gap:10px;margin-top:10px;">
-<button id="admShipCancel" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);cursor:pointer;">取消</button>
-<button id="admShipConfirm" style="flex:1;padding:10px;border:none;border-radius:8px;background:var(--text);color:var(--bg);font-weight:700;cursor:pointer;">确认发货</button>
-</div>
-</div>
-</div>
 </main>
 <footer class="site-footer"><div class="wrap"><p class="footer-line">© <span id="year"></span></p></div></footer>
 <div id="authModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999;">
@@ -368,7 +298,6 @@ async function refreshAuth(){
     myUser = (r.data && r.data.user) ? r.data.user : null;
   }catch(e){ myUser = null; }
   renderAuthArea();
-  await checkAdmin();
 }
 function checkHashOrders(){ if(location.hash === "#myorders" && myUser){ stopOrder(); stopStatus(); loadMyOrders(); show("view-myorders"); } }
 if(sb){ sb.auth.onAuthStateChange(function(){ refreshAuth().then(function(){ if(myUser && pendingNet){ var n = pendingNet; pendingNet = null; closeAuth(); chooseNet(n.key, n.p, n.addr); } if(myUser && pendingFreeClaim){ var c = pendingFreeClaim; pendingFreeClaim = null; closeAuth(); claimFreebieOrder(c.p, c.email); } checkHashOrders(); }); }); refreshAuth().then(checkHashOrders); }
@@ -1072,253 +1001,6 @@ function loadMyOrders(){
 document.getElementById("userBtn").onclick = function(e){ e.stopPropagation(); toggleUserMenu(); };
 document.addEventListener("click", function(){ toggleUserMenu(false); });
 document.getElementById("refreshMyOrders").onclick = loadMyOrders;
-/* ===== 管理员：订单管理（嵌在“我的订单”里，仅管理员可见，买家视图不变） ===== */
-var myIsAdmin = false;
-var adminOrdersCache = [];
-var adminTabLoaded = false;
-var ADM_CHAIN_LABEL = { bsc:"BSC", arb:"Arbitrum", eth:"Ethereum", plasma:"Plasma", aptos:"Aptos", sol:"SOL", tron:"TRON", freebie:"免费领取" };
-function admSetMsg(t, cls){ var m = document.getElementById("adminOrderMsg"); m.textContent = t || ""; m.className = "adm-msg" + (cls ? " " + cls : ""); }
-async function checkAdmin(){
-  myIsAdmin = false;
-  if(myUser && sb){
-    try{
-      var p = await sb.from("profiles").select("is_admin").eq("id", myUser.id).single();
-      myIsAdmin = !!(p.data && p.data.is_admin);
-    }catch(e){}
-  }
-  document.getElementById("orderTabs").classList.toggle("hidden", !myIsAdmin);
-  if(!myIsAdmin) switchOrderTab("buyer");
-}
-function switchOrderTab(which){
-  var admin = (which === "admin") && myIsAdmin;
-  document.getElementById("tabBuyer").classList.toggle("active", !admin);
-  document.getElementById("tabAdmin").classList.toggle("active", admin);
-  document.getElementById("buyerOrdersWrap").classList.toggle("hidden", admin);
-  document.getElementById("adminOrdersWrap").classList.toggle("hidden", !admin);
-  if(admin && !adminTabLoaded) loadAdminOrders();
-}
-document.getElementById("tabBuyer").onclick = function(){ switchOrderTab("buyer"); };
-document.getElementById("tabAdmin").onclick = function(){ switchOrderTab("admin"); };
-document.getElementById("refreshAdminOrders").onclick = function(){ loadAdminOrders(); };
-function adminCancelledGone(o){
-  if((o.status || "") !== "cancelled") return false;
-  if(!o.cancelledAt) return false;
-  return (Date.now() - new Date(o.cancelledAt).getTime()) > 3600*1000;
-}
-async function loadAdminOrders(){
-  if(!sb || !myIsAdmin) return;
-  admSetMsg("正在加载订单…", "info");
-  document.getElementById("adminOrderList").innerHTML = '<p class="empty">加载中…</p>';
-  try{
-    var r = await sb.from("orders").select("*").order("created_at", { ascending: false });
-    if(r.error) throw new Error(r.error.message);
-    var buyerMap = {};
-    try{ var br = await sb.rpc("admin_buyer_emails"); if(br.data) br.data.forEach(function(x){ buyerMap[x.order_id] = x.email; }); }catch(e){}
-    var ptypeMap = {};
-    try{ var pr = await fetch("products.json").then(function(x){ return x.json(); }); (pr || []).forEach(function(x){ ptypeMap[x.id] = x.ptype; }); }catch(e){}
-    adminOrdersCache = (r.data || []).map(function(o){
-      return { id: o.id, productId: o.product_id, productName: o.product_name, price: o.price, chain: o.chain,
-        chainLabel: ADM_CHAIN_LABEL[o.chain] || o.chain || "", tx: o.tx, time: fmtTime(o.created_at), status: o.status,
-        buyer: buyerMap[o.id] || "", ship: normShip(o), address: o.address || null, cancelledAt: o.cancelled_at || null,
-        ptype: ptypeMap[o.product_id] || "virtual" };
-    }).filter(function(o){ return !adminCancelledGone(o); });
-    adminTabLoaded = true;
-    applyAdminFilter();
-  }catch(e){ admSetMsg("加载失败：" + e.message, "err"); }
-}
-function applyAdminFilter(){
-  var q = document.getElementById("adminOrderQ").value.trim().toUpperCase().replace(/-/g, "");
-  var st = document.getElementById("adminStatusFilter").value;
-  var list = adminOrdersCache.filter(function(o){
-    if(st && (o.status || "pending") !== st) return false;
-    if(q && shortId(o.id).indexOf(q) === -1) return false;
-    return true;
-  });
-  renderAdminOrders(list);
-  renderAdminStats(adminOrdersCache);
-  if(q || st) admSetMsg("找到 " + list.length + " 笔订单" + (q ? "（订单号含 " + q + "）" : ""), "info");
-  else admSetMsg(adminOrdersCache.length ? ("共 " + adminOrdersCache.length + " 笔订单。") : "还没有订单。", "info");
-}
-document.getElementById("adminOrderSearchBtn").onclick = applyAdminFilter;
-document.getElementById("adminOrderQ").addEventListener("keydown", function(e){ if(e.key === "Enter") applyAdminFilter(); });
-document.getElementById("adminStatusFilter").onchange = applyAdminFilter;
-document.getElementById("adminOrderClearBtn").onclick = function(){
-  document.getElementById("adminOrderQ").value = "";
-  document.getElementById("adminStatusFilter").value = "";
-  applyAdminFilter();
-};
-function admPtypeLabel(p){ return p === "physical" ? "【实物】" : (p === "freebie" ? "【免费福利】" : "【虚拟】"); }
-function renderAdminOrders(list){
-  var box = document.getElementById("adminOrderList"); box.innerHTML = "";
-  if(!list.length){ box.innerHTML = '<div class="empty">没有符合条件的订单</div>'; return; }
-  list.forEach(function(o){
-    var div = document.createElement("div"); div.className = "ord";
-    var t = document.createElement("div"); t.className = "t";
-    t.textContent = admPtypeLabel(o.ptype) + " " + (o.productName || "未知商品") + " · " + o.price + " USDT ";
-    var b = document.createElement("span"); b.className = "obadge " + (o.status || "pending");
-    b.textContent = OSTATUS_BADGE[o.status] || o.status; t.appendChild(b);
-    var d = document.createElement("div"); d.className = "d";
-    d.textContent = "订单号 " + shortId(o.id) + " · " + (o.time || "") + " · " + (o.chainLabel || "") + " · 交易 " + String(o.tx || "").slice(0, 14) + "…" + (o.buyer ? " · 买家 " + o.buyer : "");
-    div.appendChild(t); div.appendChild(d);
-    if(o.ptype === "physical" && o.address){
-      var ad = document.createElement("div"); ad.className = "d";
-      ad.textContent = "📦 收货：" + (o.address.name || "") + " " + (o.address.phone || "") + " " + (o.address.detail || "");
-      div.appendChild(ad);
-    }
-    if(o.chain === "freebie" && o.ship && o.ship.deliveryEmail){
-      var em = document.createElement("div"); em.className = "d";
-      em.textContent = "📧 收货邮箱：" + o.ship.deliveryEmail;
-      div.appendChild(em);
-    }
-    if(o.status === "shipped"){
-      var sh = document.createElement("div"); sh.className = "d"; sh.style.margin = "6px 0 0";
-      if(o.ship && o.ship.type === "physical"){
-        var tr = o.ship.tracking || [];
-        var latest = tr.length ? tr.slice().sort(function(a, b){ return String(b.t || "").localeCompare(String(a.t || "")); })[0] : null;
-        sh.textContent = "🚚 " + (o.ship.carrierLabel || "") + " " + (o.ship.trackingNo || "") + (latest ? (" · " + (latest.s || "")) : "（物流更新中）");
-      } else if(o.ship && o.ship.type === "virtual"){
-        sh.textContent = "📧 已发货给买家邮箱" + (o.ship.auto ? "（⚡自动发货）" : "") + (o.ship.emailed === false ? "（邮件发送失败，买家可在订单页查看）" : "");
-      }
-      div.appendChild(sh);
-    }
-    var ops = document.createElement("div"); ops.className = "ops";
-    if((o.status || "pending") === "pending"){
-      var s = document.createElement("button"); s.className = "mini"; s.textContent = "发货";
-      s.onclick = (function(oo){ return function(){ openAdmShipModal(oo); }; })(o);
-      ops.appendChild(s);
-      var rv = document.createElement("button"); rv.className = "mini red"; rv.textContent = "撤销订单";
-      rv.onclick = (function(oo, btn){ return function(){ adminRevoke(oo, btn); }; })(o, rv);
-      ops.appendChild(rv);
-    } else if(o.status === "shipped"){
-      var cp = document.createElement("button"); cp.className = "mini green"; cp.textContent = "标记完成";
-      cp.onclick = (function(oo, btn){ return function(){ adminComplete(oo, btn); }; })(o, cp);
-      ops.appendChild(cp);
-    }
-    div.appendChild(ops);
-    box.appendChild(div);
-  });
-}
-async function adminRevoke(o, btn){
-  if(!confirm("确定撤销这笔订单吗？\n\n撤销后：买家会看到「已撤销」，已售数量扣减、库存释放。" + (o.chain === "freebie" ? "" : "\n注意：链上已收的款不会自动退回，需要你手动给买家退款。"))) return;
-  btn.disabled = true;
-  try{
-    admSetMsg("正在撤销订单…", "info");
-    var r = await sb.from("orders").update({ status: "cancelled", cancelled_at: new Date().toISOString() }).eq("id", o.id);
-    if(r.error) throw new Error(r.error.message);
-    admSetMsg("订单已撤销，买家页面会自动同步。", "ok");
-    loadAdminOrders();
-  }catch(e){ admSetMsg("撤销失败：" + e.message, "err"); btn.disabled = false; }
-}
-async function adminComplete(o, btn){
-  btn.disabled = true;
-  try{
-    admSetMsg("正在更新订单状态…", "info");
-    var r = await sb.from("orders").update({ status: "completed" }).eq("id", o.id);
-    if(r.error) throw new Error(r.error.message);
-    admSetMsg("已更新为「订单已完成」，买家页面会自动同步。", "ok");
-    loadAdminOrders();
-  }catch(e){ admSetMsg("更新失败：" + e.message, "err"); btn.disabled = false; }
-}
-function renderAdminStats(list){
-  var box = document.getElementById("adminStatBox");
-  if(!list.length){ box.innerHTML = ""; return; }
-  var months = {};
-  list.forEach(function(o){
-    if((o.status || "") === "unpaid" || o.status === "cancelled") return;
-    var m = String(o.time || "").slice(0, 7) || "未知";
-    if(!months[m]) months[m] = { rev: 0, count: 0 };
-    months[m].rev += parseFloat(o.price) || 0;
-    months[m].count += 1;
-  });
-  var keys = Object.keys(months).sort().reverse();
-  var now = new Date(); var ym = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
-  var cur = months[ym] || { rev: 0, count: 0 };
-  var html = '<p style="margin:8px 0 0;font-size:.95rem">本月（' + ym + '）：营业额 <b>' + cur.rev.toFixed(2) + ' USDT</b>，订单 <b>' + cur.count + '</b> 笔</p>';
-  html += '<table><tr><th>月份</th><th>营业额（USDT）</th><th>订单数量</th></tr>';
-  keys.forEach(function(k){ html += '<tr><td>' + k + '</td><td>' + months[k].rev.toFixed(2) + '</td><td>' + months[k].count + '</td></tr>'; });
-  html += '</table>';
-  box.innerHTML = html;
-}
-/* ===== 管理员发货弹窗（虚拟 / 实物） ===== */
-var ADM_CARRIERS = [["SF","顺丰速运"],["ZTO","中通快递"],["YTO","圆通速递"],["STO","申通快递"],["YD","韵达快递"],["JD","京东快递"],["JTSD","极兔速递"],["EMS","EMS"],["HTKY","百世快递"],["DBL","德邦快递"]];
-var admShipOrder = null, admShipKind = "virtual";
-function openAdmShipModal(o){
-  admShipOrder = o;
-  admShipKind = (o.ptype === "physical") ? "physical" : "virtual";
-  document.getElementById("admShipTitle").textContent = "发货 · " + (o.productName || "未知商品");
-  document.getElementById("admShipStatus").textContent = "";
-  var body = document.getElementById("admShipBody"); body.innerHTML = "";
-  var info = document.createElement("p"); info.className = "adm-msg info"; info.style.margin = "0 0 10px";
-  info.textContent = "买家：" + (o.buyer || "未知") + " · 订单号 " + shortId(o.id) + (admShipKind === "physical" ? " · 实物商品" : " · 虚拟商品");
-  body.appendChild(info);
-  if(admShipKind === "virtual"){
-    var lb = document.createElement("label"); lb.textContent = "发货内容（账号 / 卡密 / 下载链接）";
-    var ta = document.createElement("textarea"); ta.id = "admShipContent"; ta.rows = 5;
-    ta.style.cssText = "width:100%;box-sizing:border-box;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);";
-    ta.placeholder = "买家将在「我的订单」里看到这些内容";
-    body.appendChild(lb); body.appendChild(ta);
-  } else {
-    var addr = o.address || {};
-    var ad = document.createElement("div");
-    ad.style.cssText = "margin:0 0 10px;padding:10px;background:var(--bg);border-radius:8px;font-size:.85rem";
-    ad.textContent = addr.name ? ("📦 收货：" + addr.name + " " + addr.phone + " " + addr.detail) : "⚠️ 买家下单时未留收货地址，请先联系买家获取后再发货。";
-    body.appendChild(ad);
-    var lb1 = document.createElement("label"); lb1.textContent = "快递公司";
-    var sel = document.createElement("select"); sel.id = "admShipCarrier";
-    sel.style.cssText = "width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;box-sizing:border-box;background:var(--bg);color:var(--text);";
-    ADM_CARRIERS.forEach(function(c){ var op = document.createElement("option"); op.value = c[0]; op.textContent = c[1]; sel.appendChild(op); });
-    var lb2 = document.createElement("label"); lb2.textContent = "快递单号";
-    var inp = document.createElement("input"); inp.id = "admShipTrackingNo"; inp.placeholder = "填写快递单号，买家可实时查看物流";
-    inp.style.cssText = "width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;box-sizing:border-box;background:var(--bg);color:var(--text);";
-    body.appendChild(lb1); body.appendChild(sel); body.appendChild(lb2); body.appendChild(inp);
-  }
-  document.getElementById("admShipModal").style.display = "flex";
-}
-document.getElementById("admShipCancel").onclick = function(){ document.getElementById("admShipModal").style.display = "none"; };
-document.getElementById("admShipConfirm").onclick = async function(){
-  var o = admShipOrder; if(!o) return;
-  var btn = document.getElementById("admShipConfirm"); btn.disabled = true;
-  try{
-    document.getElementById("admShipStatus").textContent = "正在发货…";
-    var ship;
-    if(admShipKind === "virtual"){
-      var content = document.getElementById("admShipContent").value.trim();
-      if(!content){ document.getElementById("admShipStatus").textContent = "请填写发货内容。"; btn.disabled = false; return; }
-      ship = { type: "virtual", content: content, time: new Date().toISOString(), buyerEmail: o.buyer || "", emailed: null, deliveryEmail: ((o.ship || {}).deliveryEmail) || "" };
-    } else {
-      var carrier = document.getElementById("admShipCarrier").value;
-      var found = null; ADM_CARRIERS.forEach(function(c){ if(c[0] === carrier) found = c; });
-      var no = document.getElementById("admShipTrackingNo").value.trim();
-      if(!no){ document.getElementById("admShipStatus").textContent = "请填写快递单号。"; btn.disabled = false; return; }
-      ship = { type: "physical", carrier: carrier, carrierLabel: found ? found[1] : carrier, trackingNo: no, time: new Date().toISOString(), tracking: [], signed: false };
-    }
-    var r = await sb.from("orders").update({ status: "shipped", ship: ship }).eq("id", o.id);
-    if(r.error) throw new Error(r.error.message);
-    if(admShipKind === "virtual" && o.buyer) fireAdmShipEmail(o, ship);
-    document.getElementById("admShipModal").style.display = "none";
-    admSetMsg("已发货，买家页面会自动同步。", "ok");
-    loadAdminOrders();
-  }catch(e){
-    document.getElementById("admShipStatus").textContent = "发货失败：" + e.message;
-  }finally{
-    btn.disabled = false;
-  }
-};
-/* 触发 GitHub Actions 给买家发虚拟商品邮件；失败不影响已记录的发货 */
-async function fireAdmShipEmail(o, ship){
-  var token = document.getElementById("adminGhToken").value.trim();
-  if(!token) return;
-  try{
-    await fetch("https://api.github.com/repos/LSLQ6/doraemon-blog/dispatches", {
-      method: "POST",
-      headers: { "Authorization": "Bearer " + token, "Accept": "application/vnd.github+json", "Content-Type": "application/json" },
-      body: JSON.stringify({ event_type: "ship-virtual", client_payload: {
-        order_id: o.id, buyer_email: ship.deliveryEmail || o.buyer, product_name: o.productName,
-        price: o.price, content: ship.content
-      }})
-    });
-  }catch(e){}
-}
 /* ===== 补登订单 ===== */
 var claimNet = "bsc";
 function fillClaimNets(){
