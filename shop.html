@@ -544,14 +544,16 @@ function claimFreebieOrder(p, email){
   }).select("id").then(function(r){
     if(r.error) throw r.error;
     var newId = (r.data && r.data[0]) ? r.data[0].id : null;
+    return tryAutoShip(newId).then(function(a){ return { id: newId, auto: a }; });
+  }).then(function(x){
     closePayMethods();
-    showFreebieSuccess(p, newId, email);
+    showFreebieSuccess(p, x.id, email, x.auto);
   }).catch(function(e){
     if(goBtn) goBtn.disabled = false;
     fail("领取失败：" + ((e && e.message) || e));
   });
 }
-function showFreebieSuccess(p, orderId, email){
+function showFreebieSuccess(p, orderId, email, auto){
   stopOrder(); show("view-success");
   document.getElementById("successTitle").textContent = "领取成功！🎉";
   var box = document.getElementById("orderBox");
@@ -562,8 +564,16 @@ function showFreebieSuccess(p, orderId, email){
   box.appendChild(row("金额", "免费"));
   box.appendChild(row("收货邮箱", email));
   box.appendChild(row("领取时间", new Date().toLocaleString("zh-CN",{hour12:false})));
+  if(auto && auto.ok){
+    box.appendChild(row("卡密", "已自动发出 🎉"));
+    var ah = document.createElement("div"); ah.style.cssText = "color:var(--muted);font-size:.85rem;margin:2px 0 8px;";
+    ah.textContent = "去「我的订单」输入登录密码查看。";
+    box.appendChild(ah);
+  } else if(auto && auto.noCodes){
+    box.appendChild(row("卡密", "暂时不足，卖家补充后自动发货"));
+  }
   paidOrderId = orderId;
-  setOrderStatus("pending");
+  setOrderStatus((auto && auto.ok) ? "shipped" : "pending");
   refreshOrderStatus();
 }
 document.getElementById("payMethodModal").addEventListener("click", function(e){ if(e.target && e.target.id === "payMethodModal") closePayMethods(); });
@@ -795,6 +805,18 @@ function verifyClaimTx(net, tx, need){
   }
   return Promise.resolve(false);
 }
+/* ===== 一人一码自动发货：付款确认后从卡密库取最早一条自动发出 ===== */
+function tryAutoShip(orderId){
+  if(!orderId || !sb) return Promise.resolve({ ok:false });
+  return sb.rpc("distribute_ship_code", { p_order_id: orderId }).then(function(r){
+    if(r.error) throw r.error;
+    return { ok:true };
+  }).catch(function(e){
+    var m = String((e && e.message) || "");
+    if(m.indexOf("NO_CODES") >= 0) return { ok:false, noCodes:true };
+    return { ok:false };
+  });
+}
 function onPaid(tx){
   var key=order.key, net=order.net, prod=order.prod, dbId=order.dbId;
   var txl = (net.kind==="solana") ? String(tx) : String(tx).toLowerCase();
@@ -812,12 +834,14 @@ function onPaid(tx){
     });
   }
   job.then(function(id){
-    showPaidSuccess(txl, key, net, prod, id);
+    return tryAutoShip(id).then(function(a){
+      showPaidSuccess(txl, key, net, prod, id, a);
+    });
   }).catch(function(e){
     if(e && (e.code === "23505" || String(e.message || "").indexOf("duplicate") >= 0)){
       sb.from("orders").select("id").eq("user_id", myUser.id).eq("tx", txl).limit(1).then(function(r2){
         var id = (r2.data && r2.data[0]) ? r2.data[0].id : null;
-        if(id){ showPaidSuccess(txl, key, net, prod, id); }
+        if(id){ tryAutoShip(id).then(function(a){ showPaidSuccess(txl, key, net, prod, id, a); }); }
         else { setStatus("这笔交易已被其他订单登记，请确认是你本人的付款后再试。"); }
       });
     } else {
@@ -825,7 +849,7 @@ function onPaid(tx){
     }
   });
 }
-function showPaidSuccess(txl, key, net, prod, orderId){
+function showPaidSuccess(txl, key, net, prod, orderId, auto){
   stopOrder(); show("view-success");
   document.getElementById("successTitle").textContent = "支付成功！";
   paidOrder={ tx:txl, net:net, name:prod.name, price:prod.price, time:new Date().toLocaleString("zh-CN",{hour12:false}) };
@@ -841,7 +865,15 @@ function showPaidSuccess(txl, key, net, prod, orderId){
   var ka=document.createElement("span"); ka.textContent="交易哈希";
   var va=document.createElement("span"); var link=document.createElement("a"); link.href=net.scan+txl; link.target="_blank"; link.rel="noopener"; link.textContent=txl.slice(0,10)+"…"+txl.slice(-8); link.style.color="var(--link)"; va.appendChild(link);
   txrow.appendChild(ka); txrow.appendChild(va); box.appendChild(txrow);
-  setOrderStatus("pending");
+  if(auto && auto.ok){
+    box.appendChild(row("发货状态", "✅ 已自动发货"));
+    var ah = document.createElement("div"); ah.style.cssText = "color:var(--muted);font-size:.85rem;margin:2px 0 8px;";
+    ah.textContent = "卡密已发到该订单，去「我的订单」输入登录密码查看。";
+    box.appendChild(ah);
+  } else if(auto && auto.noCodes){
+    box.appendChild(row("发货状态", "待发货（卡密暂时不足，卖家补充后自动发出）"));
+  }
+  setOrderStatus((auto && auto.ok) ? "shipped" : "pending");
   refreshOrderStatus();
   if(statusTimer) clearInterval(statusTimer);
   statusTimer=setInterval(refreshOrderStatus, 60000);
@@ -1010,15 +1042,20 @@ document.getElementById("claimBtn").onclick = function(){
     return verifyClaimTx(net, tx, need);
   }).then(function(ok){
     if(!ok) throw { claimMsg: "核验失败：这笔交易里没有给店主地址转 " + prod.price + " USDT 的记录，请检查哈希和网络是否选对。" };
-    return sb.from("orders").insert({ user_id: myUser.id, product_id: prod.id, product_name: prod.name, price: prod.price, chain: claimNet, tx: tx, status: "pending" });
+    return sb.from("orders").insert({ user_id: myUser.id, product_id: prod.id, product_name: prod.name, price: prod.price, chain: claimNet, tx: tx, status: "pending" }).select("id");
   }).then(function(ins){
     if(ins.error){
       if(ins.error.code === "23505") throw { claimMsg: "这笔交易已经被登记过了（一笔交易只能绑定一个账号），无需重复补登。" };
       throw { claimMsg: "登记失败：" + ins.error.message };
     }
-    setClaim("补登成功！订单状态为「待发货」。");
-    document.getElementById("claimTx").value = "";
-    loadMyOrders(); loadSold().then(render);
+    var nid = (ins.data && ins.data[0]) ? ins.data[0].id : null;
+    return tryAutoShip(nid).then(function(a){
+      if(a.ok) setClaim("补登成功！卡密已自动发出 🎉 去「我的订单」输入登录密码查看。");
+      else if(a.noCodes) setClaim("补登成功！订单为「待发货」。卡密暂时不足，卖家补充后会自动发货。");
+      else setClaim("补登成功！订单状态为「待发货」。");
+      document.getElementById("claimTx").value = "";
+      loadMyOrders(); loadSold().then(render);
+    });
   }).catch(function(e){
     setClaim((e && e.claimMsg) ? e.claimMsg : ("出错了：" + (e.message || e)));
   }).finally(function(){ btn.disabled = false; });
