@@ -61,6 +61,7 @@ button.del:disabled { opacity:.55; cursor:wait; }
 .obadge.unpaid { background:#e9ecef; color:#495057; }
 .obadge.shipped { background:#e8f0fe; color:#1a56db; }
 .obadge.completed { background:#e8f5e9; color:#2e7d32; }
+.obadge.cancelled { background:#fdecea; color:#b3261e; }
 .ord, .cand { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-top:10px; font-size:.9rem; }
 .ord .t, .cand .t { font-weight:700; font-size:1rem; }
 .ord .d, .cand .d { color:var(--muted); font-size:.83rem; word-break:break-all; }
@@ -68,6 +69,7 @@ button.del:disabled { opacity:.55; cursor:wait; }
 button.mini { padding:8px 16px; font-size:.88rem; font-weight:600; color:#fff; background:#1d5fa8; border:none; border-radius:8px; cursor:pointer; }
 button.mini:disabled { opacity:.55; cursor:wait; }
 button.mini.green { background:#2e7d32; }
+button.mini.red { background:#b3261e; }
 select.psel { padding:8px 10px; font-size:.9rem; border:1px solid var(--border); border-radius:8px; background:var(--card); color:var(--text); max-width:100%; }
 .stat-table { width:100%; border-collapse:collapse; margin-top:10px; font-size:.92rem; }
 .stat-table th, .stat-table td { border:1px solid var(--border); padding:8px 10px; text-align:center; }
@@ -624,7 +626,7 @@ var SB_URL = "https://vvwyheyojnmeyzbisxnq.supabase.co";
 var SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ2d3loZXlvam5tZXl6YmlzeG5xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MTE0MTQsImV4cCI6MjEwNjE4NzQxNH0.U2ZMJZbgm-5cxP7M383ymjX22UW9ZuvtgU8owXV8oR8";
 var sbs = (window.supabase ? window.supabase.createClient(SB_URL, SB_KEY) : null);
 var sbUser = null, sbIsAdmin = false;
-const OSTATUS = { unpaid:"待支付", pending:"待发货", shipped:"已发货", completed:"订单已完成" };
+const OSTATUS = { unpaid:"待支付", pending:"待发货", shipped:"已发货", completed:"订单已完成", cancelled:"已撤销" };
 function fmtT(ts){
   const d = new Date(ts);
   const p = n => String(n).padStart(2, "0");
@@ -743,6 +745,9 @@ function renderOrders(list){
       const s = document.createElement("button"); s.className = "mini"; s.textContent = "发货";
       s.onclick = () => openShipModal(o);
       ops.appendChild(s);
+      const rv = document.createElement("button"); rv.className = "mini red"; rv.textContent = "撤销订单";
+      rv.onclick = () => revokeOrder(o, rv);
+      ops.appendChild(rv);
     } else if(o.status === "shipped"){
       const sh = document.createElement("div"); sh.className = "d"; sh.style.margin = "6px 0 0";
       if(o.ship && o.ship.type === "physical"){
@@ -760,6 +765,17 @@ function renderOrders(list){
     div.appendChild(t); div.appendChild(d); div.appendChild(ops);
     box.appendChild(div);
   });
+}
+async function revokeOrder(o, btn){
+  if(!confirm("确定撤销这笔订单吗？\n\n撤销后：买家会看到「已撤销」，已售数量扣减、库存释放。" + (o.chain === "freebie" ? "" : "\n注意：链上已收的款不会自动退回，需要你手动给买家退款。"))) return;
+  btn.disabled = true;
+  try{
+    setStatus("正在撤销订单…", "info");
+    const r = await sbs.from("orders").update({ status: "cancelled" }).eq("id", o.id);
+    if(r.error) throw new Error(r.error.message);
+    setStatus("订单已撤销，买家页面会自动同步。", "ok");
+    loadSbOrders();
+  }catch(e){ setStatus("撤销失败：" + e.message, "err"); btn.disabled = false; }
 }
 async function changeStatus(o, st, btn){
   btn.disabled = true;
@@ -856,7 +872,7 @@ function renderStats(list){
   if(!list.length){ box.innerHTML = '<div class="empty">暂无数据</div>'; return; }
   const months = {};
   list.forEach(o => {
-    if((o.status || "") === "unpaid") return;
+    if((o.status || "") === "unpaid" || o.status === "cancelled") return;
     const m = String(o.time || "").slice(0, 7) || "未知";
     if(!months[m]) months[m] = { rev: 0, count: 0 };
     months[m].rev += parseFloat(o.price) || 0;
