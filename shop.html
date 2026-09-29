@@ -164,6 +164,7 @@
 <footer class="site-footer"><div class="wrap"><p class="footer-line">© <span id="year"></span></p></div></footer>
 <div id="authModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999;">
   <div style="background:#fff;border-radius:14px;padding:26px 24px;width:320px;text-align:center;color:#1a1a1a;">
+    <div id="authMainBox">
     <p id="authTitle" style="margin:0 0 4px;font-weight:700;font-size:1.05rem;">登录</p>
     <p id="authHint" class="pay-note2" style="margin:0 0 6px;color:#6b6b6b;"></p>
     <input type="email" id="authEmail" class="auth-input" placeholder="邮箱" autocomplete="email">
@@ -174,6 +175,28 @@
       <button id="authGo" style="flex:1;padding:10px;border:none;border-radius:8px;background:#1a1a1a;color:#fff;font-weight:700;cursor:pointer;">登录</button>
     </div>
     <p style="margin:12px 0 0;font-size:.85rem;"><a href="#" id="authSwitch" style="color:#1a73e8;">没有账号？去注册</a></p>
+    <p id="authForgotRow" style="margin:8px 0 0;font-size:.85rem;"><a href="#" id="authForgot" style="color:#1a73e8;">忘记密码？</a></p>
+    </div>
+    <div id="authResetBox" style="display:none;">
+    <p style="margin:0 0 4px;font-weight:700;font-size:1.05rem;">找回密码</p>
+    <p style="margin:0 0 6px;font-size:.85rem;color:#6b6b6b;">输入注册时用的邮箱，我们会发一封重置邮件，点邮件里的链接设置新密码。</p>
+    <input type="email" id="resetEmail" class="auth-input" placeholder="注册时用的邮箱" autocomplete="email">
+    <p id="resetErr" style="display:none;color:#b3261e;font-size:.85rem;margin:8px 0 0;"></p>
+    <p id="resetOk" style="display:none;color:#2e7d32;font-size:.85rem;margin:8px 0 0;"></p>
+    <div style="display:flex;gap:10px;margin-top:14px;">
+      <button id="resetBack" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;">返回</button>
+      <button id="resetGo" style="flex:1;padding:10px;border:none;border-radius:8px;background:#1a1a1a;color:#fff;font-weight:700;cursor:pointer;">发送重置邮件</button>
+    </div>
+    </div>
+    <div id="authNewPwBox" style="display:none;">
+    <p style="margin:0 0 4px;font-weight:700;font-size:1.05rem;">设置新密码</p>
+    <input type="password" id="newPw1" class="auth-input" placeholder="新密码（至少 6 位）" autocomplete="new-password">
+    <input type="password" id="newPw2" class="auth-input" placeholder="再输入一次新密码" autocomplete="new-password">
+    <p id="newPwErr" style="display:none;color:#b3261e;font-size:.85rem;margin:8px 0 0;"></p>
+    <div style="margin-top:14px;">
+      <button id="newPwGo" style="width:100%;padding:10px;border:none;border-radius:8px;background:#1a1a1a;color:#fff;font-weight:700;cursor:pointer;">保存新密码</button>
+    </div>
+    </div>
   </div>
 </div>
 <div id="payMethodModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999;">
@@ -270,6 +293,8 @@ function toggleUserMenu(force){
 }
 function openAuth(hint){
   authMode = "login";
+  authShowBox("authMainBox");
+  document.getElementById("authForgotRow").style.display = "";
   document.getElementById("authTitle").textContent = "登录";
   document.getElementById("authGo").textContent = "登录";
   document.getElementById("authSwitch").textContent = "没有账号？去注册";
@@ -287,6 +312,7 @@ document.getElementById("authSwitch").onclick = function(e){
   document.getElementById("authTitle").textContent = (authMode === "login") ? "登录" : "注册";
   document.getElementById("authGo").textContent = (authMode === "login") ? "登录" : "注册";
   document.getElementById("authSwitch").textContent = (authMode === "login") ? "没有账号？去注册" : "已有账号？去登录";
+  document.getElementById("authForgotRow").style.display = (authMode === "login") ? "" : "none";
   document.getElementById("authErr").style.display = "none";
 };
 document.getElementById("authGo").onclick = function(){
@@ -303,6 +329,48 @@ document.getElementById("authGo").onclick = function(){
   }).catch(function(e){ document.getElementById("authGo").disabled = false; authError("出错了：" + e.message); });
 };
 document.getElementById("authPwd").addEventListener("keydown", function(e){ if(e.key === "Enter") document.getElementById("authGo").click(); });
+/* 忘记密码：发重置邮件 → 点邮件链接回来 → 设置新密码 */
+function authShowBox(which){
+  ["authMainBox", "authResetBox", "authNewPwBox"].forEach(function(id){
+    document.getElementById(id).style.display = (id === which) ? "block" : "none";
+  });
+}
+document.getElementById("authForgot").onclick = function(e){
+  e.preventDefault();
+  document.getElementById("resetErr").style.display = "none";
+  document.getElementById("resetOk").style.display = "none";
+  var em = document.getElementById("authEmail").value.trim();
+  if(em) document.getElementById("resetEmail").value = em;
+  authShowBox("authResetBox");
+};
+document.getElementById("resetBack").onclick = function(){ authShowBox("authMainBox"); };
+document.getElementById("resetGo").onclick = function(){
+  var email = document.getElementById("resetEmail").value.trim();
+  var errEl = document.getElementById("resetErr"), okEl = document.getElementById("resetOk");
+  errEl.style.display = "none"; okEl.style.display = "none";
+  if(!email){ errEl.textContent = "请填写邮箱。"; errEl.style.display = "block"; return; }
+  var btn = document.getElementById("resetGo"); btn.disabled = true;
+  sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname }).then(function(r){
+    btn.disabled = false;
+    if(r.error){ errEl.textContent = "发送失败：" + r.error.message; errEl.style.display = "block"; return; }
+    okEl.textContent = "重置邮件已发送，请去邮箱点链接设置新密码（没收到的话看看垃圾箱）。";
+    okEl.style.display = "block";
+  }).catch(function(e){ btn.disabled = false; errEl.textContent = "发送失败：" + e.message; errEl.style.display = "block"; });
+};
+document.getElementById("newPwGo").onclick = function(){
+  var p1 = document.getElementById("newPw1").value, p2 = document.getElementById("newPw2").value;
+  var errEl = document.getElementById("newPwErr"); errEl.style.display = "none";
+  if(p1.length < 6){ errEl.textContent = "密码至少 6 位。"; errEl.style.display = "block"; return; }
+  if(p1 !== p2){ errEl.textContent = "两次输入的新密码不一致。"; errEl.style.display = "block"; return; }
+  var btn = document.getElementById("newPwGo"); btn.disabled = true;
+  sb.auth.updateUser({ password: p1 }).then(function(r){
+    btn.disabled = false;
+    if(r.error){ errEl.textContent = "保存失败：" + r.error.message; errEl.style.display = "block"; return; }
+    document.getElementById("newPw1").value = ""; document.getElementById("newPw2").value = "";
+    closeAuth(); authShowBox("authMainBox");
+    alert("新密码已保存，直接用新密码登录就行。");
+  }).catch(function(e){ btn.disabled = false; errEl.textContent = "保存失败：" + e.message; errEl.style.display = "block"; });
+};
 async function refreshAuth(){
   if(!sb) return;
   try{
@@ -312,7 +380,7 @@ async function refreshAuth(){
   renderAuthArea();
 }
 function checkHashOrders(){ if(location.hash === "#myorders" && myUser){ stopOrder(); stopStatus(); loadMyOrders(); show("view-myorders"); } }
-if(sb){ sb.auth.onAuthStateChange(function(){ refreshAuth().then(function(){ if(myUser && pendingNet){ var n = pendingNet; pendingNet = null; closeAuth(); chooseNet(n.key, n.p, n.addr); } if(myUser && pendingFreeClaim){ var c = pendingFreeClaim; pendingFreeClaim = null; closeAuth(); claimFreebieOrder(c.p, c.email); } checkHashOrders(); }); }); refreshAuth().then(checkHashOrders); }
+if(sb){ sb.auth.onAuthStateChange(function(event){ if(event === "PASSWORD_RECOVERY"){ authShowBox("authNewPwBox"); document.getElementById("newPwErr").style.display = "none"; document.getElementById("authModal").classList.remove("hidden"); return; } refreshAuth().then(function(){ if(myUser && pendingNet){ var n = pendingNet; pendingNet = null; closeAuth(); chooseNet(n.key, n.p, n.addr); } if(myUser && pendingFreeClaim){ var c = pendingFreeClaim; pendingFreeClaim = null; closeAuth(); claimFreebieOrder(c.p, c.email); } checkHashOrders(); }); }); refreshAuth().then(checkHashOrders); }
 /* ===== 搜索 & 主题 ===== */
 document.getElementById("searchToggle").onclick = function(){
   var bar = document.getElementById("searchBar");
