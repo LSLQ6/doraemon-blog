@@ -959,14 +959,25 @@ function fmtTime(iso){ try{ var d=new Date(iso); var p=function(n){return String
 /* 撤销超过 1 小时的订单买家不可见 */
 function isCancelledGone(o){
   if((o.status || "") !== "cancelled") return false;
-  if(!o.cancelled_at) return false;
-  return (Date.now() - new Date(o.cancelled_at).getTime()) > 3600*1000;
+  var ca = o.cancelled_at || o.updated_at;
+  if(!ca) return true; /* 没有撤销时间戳的老订单直接隐藏 */
+  return (Date.now() - new Date(ca).getTime()) > 3600*1000;
 }
+var myOrdersRaw = [];
 function loadMyOrders(){
   if(!myUser || !sb) return;
   document.getElementById("myOrderList").innerHTML = '<p class="empty">加载中…</p>';
   sb.from("orders").select("*").order("created_at",{ascending:false}).then(function(r){
-    var list = (r.data || []).filter(function(o){ return !isCancelledGone(o); });
+    myOrdersRaw = r.data || [];
+    renderMyOrders();
+  });
+}
+/* 每分钟重算一次：撤销满 1 小时的订单到点自动消失，不用刷新页面 */
+setInterval(function(){
+  if(myUser && myOrdersRaw.length && !document.getElementById("view-myorders").classList.contains("hidden")) renderMyOrders();
+}, 60000);
+function renderMyOrders(){
+    var list = myOrdersRaw.filter(function(o){ return !isCancelledGone(o); });
     var box = document.getElementById("myOrderList"); box.innerHTML = "";
     if(!list.length){ box.innerHTML = '<div class="empty">还没有订单</div>'; return; }
     list.forEach(function(o){
@@ -996,7 +1007,6 @@ function loadMyOrders(){
       }
       box.appendChild(div);
     });
-  });
 }
 document.getElementById("userBtn").onclick = function(e){ e.stopPropagation(); toggleUserMenu(); };
 document.addEventListener("click", function(){ toggleUserMenu(false); });
