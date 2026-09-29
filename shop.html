@@ -365,7 +365,7 @@ document.getElementById("newPwGo").onclick = function(){
   var btn = document.getElementById("newPwGo"); btn.disabled = true;
   sb.auth.updateUser({ password: p1 }).then(function(r){
     btn.disabled = false;
-    if(r.error){ errEl.textContent = "保存失败：" + r.error.message; errEl.style.display = "block"; return; }
+    if(r.error){ var m = r.error.message || ""; if(m.indexOf("different from the old password") !== -1) m = "新密码不能和旧密码相同，请换一个。"; errEl.textContent = "保存失败：" + m; errEl.style.display = "block"; return; }
     document.getElementById("newPw1").value = ""; document.getElementById("newPw2").value = "";
     closeAuth(); authShowBox("authMainBox");
     alert("新密码已保存，直接用新密码登录就行。");
