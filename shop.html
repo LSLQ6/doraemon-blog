@@ -40,6 +40,7 @@
 .pm-btn svg { flex-shrink:0; }
 .pm-emoji { font-size:1.5rem; width:30px; text-align:center; flex-shrink:0; }
 .ptype-tag { display:inline-block; font-size:.68rem; font-weight:600; border:1px solid var(--border); border-radius:20px; padding:1px 8px; margin-left:8px; color:var(--muted); vertical-align:middle; }
+.ptype-tag.free { color:#1a7f37; border-color:#1a7f37; }
 .addr-form { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px; margin:12px 0; max-width:420px; }
 .addr-form h4 { margin:0 0 10px; font-size:.95rem; }
 .addr-form input, .addr-form textarea { width:100%; box-sizing:border-box; padding:9px 10px; margin:0 0 8px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text); font-size:.9rem; }
@@ -349,8 +350,8 @@ function imgHtml(p){
   for(var j=0;j<imgs.length;j++){ s += '<span class="'+(j===0?'on':'')+'"></span>'; }
   return s + '</div>';
 }
-function ptypeOf(p){ return (p && p.ptype === "physical") ? "physical" : "virtual"; }
-function ptypeLabel(p){ return ptypeOf(p) === "physical" ? "实物" : "虚拟"; }
+function ptypeOf(p){ return (p && p.ptype === "physical") ? "physical" : ((p && p.ptype === "freebie") ? "freebie" : "virtual"); }
+function ptypeLabel(p){ var t = ptypeOf(p); return t === "physical" ? "实物" : (t === "freebie" ? "免费福利" : "虚拟"); }
 function render(){
   var g = document.getElementById("productGrid"); g.innerHTML="";
   var list = PRODUCTS;
