@@ -763,7 +763,7 @@ function renderOrders(list){
     t.textContent = (o.ptype === "physical" ? "【实物】" : "【虚拟】") + " " + (o.productName || "未知商品") + " · " + o.price + " USDT ";
     const b = document.createElement("span"); b.innerHTML = badge(o.status || "pending"); t.appendChild(b);
     const d = document.createElement("div"); d.className = "d";
-    d.textContent = (o.time || "") + " · " + (o.chainLabel || o.chain || "") + " · 交易 " + String(o.tx||"").slice(0,14) + "…" + (o.buyer ? " · 买家 " + o.buyer : "");
+    d.textContent = "订单号 " + shortId8(o.id) + " · " + (o.time || "") + " · " + (o.chainLabel || o.chain || "") + " · 交易 " + String(o.tx||"").slice(0,14) + "…" + (o.buyer ? " · 买家 " + o.buyer : "");
     if(o.ptype === "physical" && o.address){
       const ad = document.createElement("div"); ad.className = "d";
       ad.textContent = "📦 收货：" + (o.address.name || "") + " " + (o.address.phone || "") + " " + (o.address.detail || "");
