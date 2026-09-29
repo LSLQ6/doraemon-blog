@@ -739,17 +739,26 @@ async function loadSbOrders(){
       id: o.id, productId: o.product_id, productName: o.product_name, price: o.price,
       chain: o.chain, chainLabel: ({bsc:"BSC",arb:"Arbitrum",eth:"Ethereum",plasma:"Plasma",aptos:"Aptos",sol:"SOL",tron:"TRON",freebie:"免费领取"})[o.chain] || o.chain || "",
       tx: o.tx, time: fmtT(o.created_at), status: o.status, buyer: buyerMap[o.id] || "",
-      ship: normShip(o.ship), address: o.address || null, cancelledAt: o.cancelled_at || null
+      ship: normShip(o.ship), address: o.address || null, cancelledAt: o.cancelled_at || null, updatedAt: o.updated_at || null
     }));
     list.forEach(o => { o.ptype = ptypeMap[o.productId] || "virtual"; });
-    const visible = list.filter(o => !isCancelledGone(o));
-    sbOrdersCache = visible;
-    renderOrders(visible);
-    renderStats(visible);
-    setStatus(visible.length ? ("共 " + visible.length + " 笔订单。") : "还没有订单。", "ok");
+    sbOrdersRaw = list;
+    refreshOrdersView();
   }catch(e){ setStatus("加载失败：" + e.message, "err"); }
 }
 var sbOrdersCache = [];
+var sbOrdersRaw = [];
+/* 重新计算可见订单并渲染：撤销满 1 小时的订单自动消失 */
+function refreshOrdersView(quiet){
+  var visible = sbOrdersRaw.filter(function(o){ return !isCancelledGone(o); });
+  sbOrdersCache = visible;
+  renderStats(visible);
+  var q = (($("ordQuery").value || "").trim());
+  if(q){ applyOrderQuery(); } else { renderOrders(visible); $("ordQueryMsg").textContent = ""; }
+  if(!quiet) setStatus(visible.length ? ("共 " + visible.length + " 笔订单。") : "还没有订单。", "ok");
+}
+/* 每分钟重算一次：撤销满 1 小时的订单到点自动消失，不用刷新页面 */
+setInterval(function(){ if(sbOrdersRaw.length && sbIsAdmin) refreshOrdersView(true); }, 60000);
 $("loadOrdersBtn").onclick = loadSbOrders;
 /* ===== 按订单号查询（8 位订单号，模糊匹配） ===== */
 function applyOrderQuery(){
@@ -766,8 +775,8 @@ function badge(st){ return '<span class="obadge ' + st + '">' + (OSTATUS[st] || 
 /* 撤销超过 1 小时的订单对买卖双方都不可见 */
 function isCancelledGone(o){
   if((o.status || "") !== "cancelled") return false;
-  var ca = o.cancelledAt || o.cancelled_at;
-  if(!ca) return false;
+  var ca = o.cancelledAt || o.cancelled_at || o.updatedAt || o.updated_at;
+  if(!ca) return true; /* 没有撤销时间戳的老订单直接隐藏 */
   return (Date.now() - new Date(ca).getTime()) > 3600*1000;
 }
 function renderOrders(list){
