@@ -190,3 +190,38 @@ html[data-theme="dark"] .gear-btn svg .gear-fill { fill: #e8e8e8; }
 .footer-line { font-size: 1.05rem; } .brand-row { display: flex; align-items: center; gap: 10px; } .brand-logo { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; }
 
 .pen-link { position: absolute; top: 12px; left: 16px; font-size: 1.35rem; text-decoration: none; z-index: 20; }
+
+/* 跑步兔子：沿页面四周一直跑 */
+.run-rabbit {
+  position: fixed;
+  left: 0; top: 0;
+  width: 60px; height: 60px;
+  z-index: 5000;
+  pointer-events: none;
+  will-change: transform;
+  animation: rabbit-run 22s linear infinite;
+}
+.run-rabbit img {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  display: block;
+  animation: rabbit-hop .45s ease-in-out infinite alternate;
+}
+@keyframes rabbit-hop {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-7px); }
+}
+@keyframes rabbit-run {
+  0%   { transform: translate(6px, 6px) rotate(0deg); }
+  23%  { transform: translate(calc(100vw - 66px), 6px) rotate(0deg); }
+  25%  { transform: translate(calc(100vw - 66px), 6px) rotate(90deg); }
+  48%  { transform: translate(calc(100vw - 66px), calc(100vh - 66px)) rotate(90deg); }
+  50%  { transform: translate(calc(100vw - 66px), calc(100vh - 66px)) rotate(180deg); }
+  73%  { transform: translate(6px, calc(100vh - 66px)) rotate(180deg); }
+  75%  { transform: translate(6px, calc(100vh - 66px)) rotate(270deg); }
+  98%  { transform: translate(6px, 6px) rotate(270deg); }
+  100% { transform: translate(6px, 6px) rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .run-rabbit, .run-rabbit img { animation: none; }
+}
