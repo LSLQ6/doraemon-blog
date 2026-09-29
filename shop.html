@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>购物 · 祁萧远</title>
-<meta name="description" content="商品列表，支持 USDT 支付">
+<meta name="description" content="商品列表，支持 USD 支付">
 <link rel="stylesheet" href="styles.css?v=9">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -122,7 +122,7 @@
 <div class="section-head"><h2>确认订单</h2></div>
 <div id="orderSummary"></div>
 <div id="payPanel" class="pay-panel hidden">
-<p class="pay-note2" style="color:#d93025;font-weight:700;">⚠️ 请确保店主实际收到 <span id="payNeedFull"></span> USDT：从交易所提币时手续费是另外扣的，请把手续费算进去、足额转出；少到账系统检测不到付款。</p>
+<p class="pay-note2" style="color:#d93025;font-weight:700;">⚠️ 请确保店主实际收到 <span id="payNeedFull"></span> USD：从交易所提币时手续费是另外扣的，请把手续费算进去、足额转出；少到账系统检测不到付款。</p>
 <p>请支付 <b id="payAmount" style="font-size:1.3rem;color:var(--text)"></b></p>
 <p style="font-weight:700;margin:0 0 8px;">支付网络：<span id="payNetLabel"></span></p>
 <img id="payQR" src="" alt="收款二维码" width="200" height="200">
@@ -460,7 +460,7 @@ function openPayMethods(p){
     box.appendChild(af);
   }
   box.appendChild(pmTitle("选择支付方式"));
-  var b1 = pmBtn(ICON_USDT, "USDT支付");
+  var b1 = pmBtn(ICON_USDT, "USD支付");
   b1.onclick = function(){
     if(isFree){ showFreebieForm(p); return; }
     var addr = readPmAddr(p); if(addr === false) return;
@@ -636,7 +636,7 @@ function chooseNet(key,p,addr){
 function startPayPanel(key,p,dbId){
   stopOrder();
   var net=NETS[key];
-  document.getElementById("payAmount").textContent=fmtPrice(p.price)+"（"+p.price+" USDT）";
+  document.getElementById("payAmount").textContent=fmtPrice(p.price)+"（"+p.price+" USD）";
   document.getElementById("payNetLabel").textContent=net.label;
   document.getElementById("payNeedFull").textContent=p.price;
   document.getElementById("payAddr").textContent=net.seller;
@@ -1042,7 +1042,7 @@ document.getElementById("claimBtn").onclick = function(){
     if(dup.data && dup.data.length) throw { claimMsg: "这笔交易已经登记过了，无需重复补登。" };
     return verifyClaimTx(net, tx, need);
   }).then(function(ok){
-    if(!ok) throw { claimMsg: "核验失败：这笔交易里没有给店主地址转 " + prod.price + " USDT 的记录，请检查哈希和网络是否选对。" };
+    if(!ok) throw { claimMsg: "核验失败：这笔交易里没有给店主地址转 " + prod.price + " USD 的记录，请检查哈希和网络是否选对。" };
     return sb.from("orders").insert({ user_id: myUser.id, product_id: prod.id, product_name: prod.name, price: prod.price, chain: claimNet, tx: tx, status: "pending" }).select("id");
   }).then(function(ins){
     if(ins.error){
