@@ -125,6 +125,11 @@ select.psel { padding:8px 10px; font-size:.9rem; border:1px solid var(--border);
 <div id="paneShop" class="hidden">
   <label>商品名称</label><input type="text" id="pName" placeholder="例如：手工皂"><div style="margin:10px 0"><label>商品类型</label><label style="display:inline-block;margin-right:18px;font-weight:400"><input type="radio" name="pType" value="virtual" checked> 虚拟商品（邮箱发货）</label><label style="display:inline-block;margin-right:18px;font-weight:400"><input type="radio" name="pType" value="physical"> 实物商品（快递发货）</label><label style="display:inline-block;font-weight:400"><input type="radio" name="pType" value="freebie"> 免费福利（价格0，邮箱领取）</label></div><div class="row"><div><label>价格（USD）</label><input type="text" id="pPrice" inputmode="decimal" placeholder="例如：10"></div><div><label>库存（件，留空=不限）</label><input type="text" id="pStock" inputmode="numeric" placeholder="例如：15"></div></div><div><label>商品图片（最多5张，第一张为封面）</label><div id="pImgsBox" style="display:flex;gap:10px;flex-wrap:wrap;margin:8px 0"></div><div style="display:flex;gap:8px"><input type="text" id="pImgUrl" placeholder="粘贴图片网址 https://…" style="flex:1;min-width:0"><button type="button" class="mini" id="pAddUrlBtn" style="flex-shrink:0">添加</button></div><div style="display:flex;gap:10px;align-items:center;margin-top:8px"><button type="button" class="mini" id="uploadImgBtn">📷 选择手机照片上传</button><input type="file" id="pImgFile" accept="image/*" class="hidden"><span class="hint" id="imgUploadStatus" style="margin:0"></span></div><p class="hint">可粘贴网址添加，也可手机拍照（支持裁剪）上传；点缩略图右上角 ✕ 可删除。</p></div><label>商品描述（可选）</label><input type="text" id="pDesc" placeholder="一句话介绍"><button class="publish" id="addProductBtn">上架商品</button><button class="load" id="loadProductsBtn" style="margin-top:12px">加载商品列表</button><div id="productList"></div></div><div id="paneOrders" class="hidden">
 <label>订单管理</label>
+<div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 16px;margin:8px 0;font-size:.95rem">
+  <span>📊 今日访客 <b id="visitToday">–</b></span>
+  <span>🟢 当前在线 <b id="visitOnline">–</b></span>
+  <span class="hint" id="visitDay" style="margin:0"></span>
+</div>
 <p class="hint">买家在商城登录后付款，订单会自动记入数据库。用你的商城账号登录后，在这里标记发货 / 完成。如果商城那边已经登录了管理员账号，这里会自动沿用，不用再输密码。</p>
 <div id="sbLoginBox">
 <div class="row"><div><label>商城账号邮箱</label><input type="text" id="sbEmail" placeholder="注册时用的邮箱"></div><div><label>密码</label><input type="password" id="sbPwd" placeholder="密码"></div></div>
@@ -694,6 +699,7 @@ async function afterSbLogin(){
   $("sbWho").textContent = sbUser.email;
   setStatus("登录成功。", "ok");
   loadSbOrders();
+  loadVisitStats();
 }
 $("sbLogoutBtn").onclick = async () => {
   if(sbs) await sbs.auth.signOut();
@@ -748,6 +754,19 @@ async function loadSbOrders(){
 }
 var sbOrdersCache = [];
 var sbOrdersRaw = [];
+/* 访客统计：今日访客 + 当前在线，每分钟刷新；「今日」按北京时间划分，凌晨 0 点自动从 0 开始 */
+async function loadVisitStats(){
+  if(!sbs || !sbIsAdmin) return;
+  try{
+    const r = await sbs.rpc("visitor_stats");
+    if(r.error) throw r.error;
+    const d = r.data || {};
+    $("visitToday").textContent = (d.today == null ? "–" : d.today);
+    $("visitOnline").textContent = (d.online == null ? "–" : d.online);
+    $("visitDay").textContent = d.day ? ("统计日期 " + d.day + "（北京时间，凌晨自动清零）") : "";
+  }catch(e){ /* SQL 还没执行时静默，执行后自动有数 */ }
+}
+setInterval(function(){ loadVisitStats(); }, 60000);
 /* 重新计算可见订单并渲染：撤销满 1 小时的订单自动消失 */
 function refreshOrdersView(quiet){
   var visible = sbOrdersRaw.filter(function(o){ return !isCancelledGone(o); });
