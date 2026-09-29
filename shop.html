@@ -84,6 +84,7 @@
 .obadge.unpaid { background:#e9ecef; color:#495057; }
 .obadge.shipped { background:#d1ecf1; color:#0c5460; }
 .obadge.completed { background:#d4edda; color:#155724; }
+.obadge.cancelled { background:#fdecea; color:#b3261e; }
 .claim-input { width:100%; padding:10px 12px; font-size:.9rem; border:1px solid var(--border); border-radius:8px; box-sizing:border-box; background:var(--bg); color:var(--text); margin:6px 0; }
 .claim-sel { width:100%; padding:10px; font-size:.9rem; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text); margin:6px 0; }
 </style>
@@ -222,8 +223,8 @@ function fmtPrice(usd){
 }
 var orderTimer = null, order = null;
 var statusTimer = null, paidOrder = null, paidOrderId = null;
-var OSTATUSTXT = { pending:"⏳ 等待发货", shipped:"📦 卖家已发货", completed:"🎉 订单已完成" };
-var OSTATUS_BADGE = { unpaid:"待支付", pending:"待发货", shipped:"已发货", completed:"订单已完成" };
+var OSTATUSTXT = { pending:"⏳ 等待发货", shipped:"📦 卖家已发货", completed:"🎉 订单已完成", cancelled:"❌ 订单已撤销" };
+var OSTATUS_BADGE = { unpaid:"待支付", pending:"待发货", shipped:"已发货", completed:"订单已完成", cancelled:"已撤销" };
 var searchKw = "";
 /* ===== 登录 / 注册 ===== */
 function renderAuthArea(){
