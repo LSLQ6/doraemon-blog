@@ -92,7 +92,7 @@ select.psel { padding:8px 10px; font-size:.9rem; border:1px solid var(--border);
   <span>🟢 当前在线 <b id="visitOnline">–</b></span>
 </div>
 </div>
-<p class="sub">写文章、管理文章、管理商品都在这一页完成。操作会自动同步到你的 GitHub 仓库。</p>
+<p class="sub">文章、商品、订单都在这一页管理。操作会自动同步到你的 GitHub 仓库。</p>
 
 <div class="tokenbox">
 <label>GitHub 访问令牌</label>
@@ -101,35 +101,37 @@ select.psel { padding:8px 10px; font-size:.9rem; border:1px solid var(--border);
 </div>
 
 <div class="tabs">
-<button id="tabWrite" class="active" onclick="showTab('write')">写文章</button>
-<button id="tabManage" onclick="showTab('manage')">管理文章</button>
+<button id="tabPosts" class="active" onclick="showTab('posts')">文章管理</button>
   <button id="tabShop" onclick="showTab('shop')">商品管理</button>
   <button id="tabOrders" onclick="showTab('orders')">订单管理</button>
   
 </div>
 
-<div id="paneWrite">
+<div id="panePosts">
+<button class="mini" id="newPostBtn" style="padding:10px 22px">＋ 写新文章</button>
+<div id="postEditor" class="hidden" style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-top:12px">
+<div style="font-weight:700" id="editorTitle">写新文章</div>
+<input type="hidden" id="postFile">
 <label>标题</label>
-<input type="text" id="title" placeholder="给文章起个标题">
-<div class="row"><div>
+<input type="text" id="postTitle" placeholder="给文章起个标题">
 <label>日期</label>
-<input type="date" id="date">
-</div>
-</div>
+<input type="date" id="postDate">
 <label>摘要（一句话）</label>
-<input type="text" id="excerpt" placeholder="会显示在首页列表里">
+<input type="text" id="postExcerpt" placeholder="会显示在首页列表里">
 <label>正文（支持 Markdown）</label>
-<textarea id="body" placeholder="在这里写正文……"></textarea>
+<textarea id="postBody" placeholder="在这里写正文……"></textarea>
 <div style="display:flex;gap:10px;align-items:center;margin:10px 0 2px">
-<button type="button" class="mini" id="wImgBtn">📷 添加图片（最多8张）</button>
-<input type="file" id="wImgFile" accept="image/*" multiple class="hidden">
-<span class="hint" id="wImgStatus" style="margin:0"></span>
+<button type="button" class="mini" id="postImgBtn">📷 添加图片（最多8张）</button>
+<input type="file" id="postImgFile" accept="image/*" multiple class="hidden">
+<span class="hint" id="postImgStatus" style="margin:0"></span>
 </div>
 <p class="hint">从手机相册选照片，可自定义裁剪，上传后自动插入到正文光标处。</p>
-<button class="publish" id="publishBtn">发布文章</button>
+<div style="display:flex;gap:10px;margin-top:18px">
+<button type="button" class="mini" id="postCancel" style="flex:1;background:#6b6b6b">取消</button>
+<button type="button" class="publish" id="postSave" style="flex:1;margin-top:0">发布文章</button>
 </div>
-
-<div id="paneManage" class="hidden">
+</div>
+<label style="margin-top:26px">已发布文章</label>
 <button class="load" id="loadBtn">加载文章列表</button>
 <div id="postList"></div>
 </div>
@@ -188,22 +190,6 @@ select.psel { padding:8px 10px; font-size:.9rem; border:1px solid var(--border);
 </div>
 </div>
 
-<div id="editPostModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999;align-items:center;justify-content:center;padding:16px">
-<div style="background:#fff;border-radius:12px;max-width:540px;width:100%;padding:18px;max-height:92vh;overflow:auto">
-<div style="font-weight:700;margin-bottom:8px">修改文章</div>
-<input type="hidden" id="epFile">
-<label>标题</label><input type="text" id="epTitle">
-<label>日期</label><input type="date" id="epDate">
-<label>摘要（一句话）</label><input type="text" id="epExcerpt">
-<label>正文（支持 Markdown）</label><textarea id="epBody"></textarea>
-<div class="hint" id="epStatus" style="margin:8px 0"></div>
-<div style="display:flex;gap:10px;margin-top:14px">
-<button type="button" class="mini" id="epCancel" style="flex:1;background:#6b6b6b">取消</button>
-<button type="button" class="mini green" id="epSave" style="flex:1">保存修改</button>
-</div>
-</div>
-</div>
-
 <div id="shipModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999;align-items:center;justify-content:center;padding:16px">
 <div style="background:#fff;border-radius:12px;max-width:520px;width:100%;padding:18px;max-height:92vh;overflow:auto">
 <div style="font-weight:700;margin-bottom:8px" id="shipTitle">发货</div>
@@ -252,14 +238,14 @@ select.psel { padding:8px 10px; font-size:.9rem; border:1px solid var(--border);
 <script>
 const OWNER = "LSLQ6", REPO = "doraemon-blog", BRANCH = "main";
 const $ = id => document.getElementById(id);
-$("date").value = new Date().toISOString().slice(0, 10);
+$("postDate").value = new Date().toISOString().slice(0, 10);
 
 function showTab(which) {
-  $("paneWrite").classList.toggle("hidden", which !== "write");
-  $("paneManage").classList.toggle("hidden", which !== "manage");;$("paneShop").classList.toggle("hidden", which !== "shop");
+  $("panePosts").classList.toggle("hidden", which !== "posts");
+  $("paneShop").classList.toggle("hidden", which !== "shop");
   $("paneOrders").classList.toggle("hidden", which !== "orders");
-  $("tabWrite").classList.toggle("active", which === "write");
-  $("tabManage").classList.toggle("active", which === "manage");;$("tabShop").classList.toggle("active", which === "shop");
+  $("tabPosts").classList.toggle("active", which === "posts");
+  $("tabShop").classList.toggle("active", which === "shop");
   $("tabOrders").classList.toggle("active", which === "orders");
 }
 
@@ -289,41 +275,108 @@ async function gh(path, token, method, body) {
   return res.json();
 }
 
-$("publishBtn").onclick = async () => {
+/* ===== 文章编辑器：写新文章 / 修改已发布文章 共用（支持图片上传裁剪） ===== */
+let postMode = "new"; // "new" 新文章 | "edit" 修改已发布
+$("newPostBtn").onclick = () => {
+  postMode = "new";
+  $("postFile").value = "";
+  $("postTitle").value = ""; $("postExcerpt").value = ""; $("postBody").value = "";
+  $("postDate").value = new Date().toISOString().slice(0, 10);
+  $("postImgStatus").textContent = "";
+  $("editorTitle").textContent = "写新文章";
+  $("postSave").textContent = "发布文章";
+  $("postEditor").classList.remove("hidden");
+  $("postEditor").scrollIntoView({ behavior: "smooth", block: "start" });
+};
+$("postCancel").onclick = () => { $("postEditor").classList.add("hidden"); };
+async function startEditPost(p){
   const token = $("token").value.trim();
-  const title = $("title").value.trim();
-  const category = "生活";
-  const date = $("date").value || new Date().toISOString().slice(0, 10);
-  const excerpt = $("excerpt").value.trim();
-  const body = $("body").value.trim();
+  if (!token) return setStatus("请先填写 GitHub 访问令牌。", "err");
+  try {
+    setStatus("正在读取《" + p.title + "》…", "info");
+    const f = await gh("posts/" + p.file, token);
+    const { meta, body } = parsePostMd(b64dec(f.content));
+    postMode = "edit";
+    $("postFile").value = p.file;
+    $("postTitle").value = p.title || meta.title || "";
+    $("postDate").value = p.date || meta.date || "";
+    $("postExcerpt").value = p.excerpt || meta.excerpt || "";
+    $("postBody").value = (body || "").replace(/\n$/, "");
+    $("postImgStatus").textContent = "";
+    const n = articleImgCount();
+    if (n) $("postImgStatus").textContent = "已包含 " + n + " 张图片。";
+    $("editorTitle").textContent = "修改文章";
+    $("postSave").textContent = "保存修改";
+    setStatus("", "");
+    $("postEditor").classList.remove("hidden");
+    $("postEditor").scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch(e){ setStatus("读取失败：" + e.message, "err"); }
+}
+$("postSave").onclick = async () => {
+  const token = $("token").value.trim();
+  const title = $("postTitle").value.trim();
+  const date = $("postDate").value || new Date().toISOString().slice(0, 10);
+  const excerpt = $("postExcerpt").value.trim();
+  const body = $("postBody").value.trim();
   if (!token) return setStatus("请先填写 GitHub 访问令牌。", "err");
   if (!title || !body) return setStatus("标题和正文不能为空。", "err");
-  const btn = $("publishBtn");
+  const btn = $("postSave");
   btn.disabled = true;
   try {
-    setStatus("正在发布…", "info");
-    const file = date + "-" + Date.now().toString(36) + ".md";
-    const md = "---\ntitle: " + title.replace(/\n/g, " ") +
-      "\ndate: " + date + "\ncategory: " + category.replace(/\n/g, " ") +
-      "\nexcerpt: " + excerpt.replace(/\n/g, " ") + "\n---\n\n" + body + "\n";
-    await gh("posts/" + file, token, "PUT", {
-      message: "发布文章：" + title,
-      content: b64(md),
-      branch: BRANCH
-    });
-    const idx = await gh("posts.json", token);
-    const list = JSON.parse(b64dec(idx.content));
-    list.unshift({ file, title, date, category, excerpt });
-    await gh("posts.json", token, "PUT", {
-      message: "更新文章索引",
-      content: b64(JSON.stringify(list)),
-      sha: idx.sha,
-      branch: BRANCH
-    });
-    setStatus("发布成功！几分钟后在博客首页就能看到这篇文章。", "ok");
-    $("title").value = ""; $("excerpt").value = ""; $("body").value = "";
+    if (postMode === "edit" && $("postFile").value) {
+      const file = $("postFile").value;
+      setStatus("正在保存修改…", "info");
+      const f = await gh("posts/" + file, token);
+      const { meta } = parsePostMd(b64dec(f.content));
+      const category = meta.category || "生活";
+      const md = "---\ntitle: " + title.replace(/\n/g, " ") +
+        "\ndate: " + date + "\ncategory: " + String(category).replace(/\n/g, " ") +
+        "\nexcerpt: " + excerpt.replace(/\n/g, " ") + "\n---\n\n" + body + "\n";
+      await gh("posts/" + file, token, "PUT", {
+        message: "修改文章：" + title,
+        content: b64(md),
+        sha: f.sha,
+        branch: BRANCH
+      });
+      const idx = await gh("posts.json", token);
+      const list = JSON.parse(b64dec(idx.content));
+      const it = list.find(x => x.file === file);
+      if (it) { it.title = title; it.date = date; it.excerpt = excerpt; }
+      await gh("posts.json", token, "PUT", {
+        message: "更新文章索引",
+        content: b64(JSON.stringify(list)),
+        sha: idx.sha,
+        branch: BRANCH
+      });
+      renderList(list);
+      setStatus("《" + title + "》已保存修改。", "ok");
+    } else {
+      setStatus("正在发布…", "info");
+      const category = "生活";
+      const file = date + "-" + Date.now().toString(36) + ".md";
+      const md = "---\ntitle: " + title.replace(/\n/g, " ") +
+        "\ndate: " + date + "\ncategory: " + category.replace(/\n/g, " ") +
+        "\nexcerpt: " + excerpt.replace(/\n/g, " ") + "\n---\n\n" + body + "\n";
+      await gh("posts/" + file, token, "PUT", {
+        message: "发布文章：" + title,
+        content: b64(md),
+        branch: BRANCH
+      });
+      const idx = await gh("posts.json", token);
+      const list = JSON.parse(b64dec(idx.content));
+      list.unshift({ file, title, date, category, excerpt });
+      await gh("posts.json", token, "PUT", {
+        message: "更新文章索引",
+        content: b64(JSON.stringify(list)),
+        sha: idx.sha,
+        branch: BRANCH
+      });
+      setStatus("发布成功！几分钟后在博客首页就能看到这篇文章。", "ok");
+    }
+    $("postEditor").classList.add("hidden");
+    $("postTitle").value = ""; $("postExcerpt").value = ""; $("postBody").value = ""; $("postFile").value = "";
   } catch (e) {
-    setStatus("发布失败：" + e.message, "err");
+    setStatus((postMode === "edit" ? "保存失败：" : "发布失败：") + e.message, "err");
   } finally {
     btn.disabled = false;
   }
@@ -369,7 +422,7 @@ function renderList(list) {
     const edt = document.createElement("button");
     edt.className = "mini";
     edt.textContent = "修改";
-    edt.onclick = () => openEditPost(p);
+    edt.onclick = () => startEditPost(p);
     const del = document.createElement("button");
     del.className = "del";
     del.textContent = "删除";
@@ -408,7 +461,7 @@ async function deletePost(p, btn) {
   }
 }
 
-/* ===== 修改已发布文章 ===== */
+/* ===== 修改已发布文章（与编辑器共用 startEditPost） ===== */
 function parsePostMd(text){
   const m = text.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
   const meta = {};
@@ -421,97 +474,35 @@ function parsePostMd(text){
   }
   return { meta, body: text };
 }
-async function openEditPost(p){
-  const token = $("token").value.trim();
-  if (!token) return setStatus("请先填写 GitHub 访问令牌。", "err");
-  try {
-    setStatus("正在读取《" + p.title + "》…", "info");
-    const f = await gh("posts/" + p.file, token);
-    const { meta, body } = parsePostMd(b64dec(f.content));
-    $("epFile").value = p.file;
-    $("epTitle").value = p.title || meta.title || "";
-    $("epDate").value = p.date || meta.date || "";
-    $("epExcerpt").value = p.excerpt || meta.excerpt || "";
-    $("epBody").value = (body || "").replace(/\n$/, "");
-    $("epStatus").textContent = "";
-    $("editPostModal").style.display = "flex";
-    setStatus("", "");
-  } catch(e){ setStatus("读取失败：" + e.message, "err"); }
-}
-$("epCancel").onclick = () => { $("editPostModal").style.display = "none"; };
-$("epSave").onclick = async () => {
-  const token = $("token").value.trim();
-  if (!token) return setStatus("请先填写 GitHub 访问令牌。", "err");
-  const file = $("epFile").value;
-  const title = $("epTitle").value.trim();
-  const date = $("epDate").value || new Date().toISOString().slice(0, 10);
-  const excerpt = $("epExcerpt").value.trim();
-  const body = $("epBody").value.trim();
-  if (!title || !body) return ($("epStatus").textContent = "标题和正文不能为空。");
-  const btn = $("epSave");
-  btn.disabled = true;
-  try {
-    $("epStatus").textContent = "正在保存…";
-    const f = await gh("posts/" + file, token);
-    const { meta } = parsePostMd(b64dec(f.content));
-    const category = meta.category || "生活";
-    const md = "---\ntitle: " + title.replace(/\n/g, " ") +
-      "\ndate: " + date + "\ncategory: " + String(category).replace(/\n/g, " ") +
-      "\nexcerpt: " + excerpt.replace(/\n/g, " ") + "\n---\n\n" + body + "\n";
-    await gh("posts/" + file, token, "PUT", {
-      message: "修改文章：" + title,
-      content: b64(md),
-      sha: f.sha,
-      branch: BRANCH
-    });
-    const idx = await gh("posts.json", token);
-    const list = JSON.parse(b64dec(idx.content));
-    const it = list.find(x => x.file === file);
-    if (it) { it.title = title; it.date = date; it.excerpt = excerpt; }
-    await gh("posts.json", token, "PUT", {
-      message: "更新文章索引",
-      content: b64(JSON.stringify(list)),
-      sha: idx.sha,
-      branch: BRANCH
-    });
-    renderList(list);
-    $("editPostModal").style.display = "none";
-    setStatus("《" + title + "》已保存修改。", "ok");
-  } catch(e){
-    $("epStatus").textContent = "保存失败：" + e.message;
-  } finally {
-    btn.disabled = false;
-  }
-};
 
-/* ===== 写文章图片上传：手机相册 → 自定义裁剪 → 传到 images/posts/ → 插入正文（最多8张） ===== */
+/* ===== 文章图片上传：手机相册 → 自定义裁剪 → 传到 images/posts/ → 插入正文（最多8张） ===== */
 const MAX_ARTICLE_IMGS = 8;
 let articleImgQueue = [];
 function articleImgCount(){
-  const m = ($("body").value || "").match(/!\[[^\]]*\]\([^)]+\)/g);
+  const m = ($("postBody").value || "").match(/!\[[^\]]*\]\([^)]+\)/g);
   return m ? m.length : 0;
 }
-$("wImgBtn").onclick = () => { imgMode = "article"; $("wImgFile").click(); };
-$("wImgFile").onchange = e => {
+$("postImgBtn").onclick = () => { imgMode = "article"; $("postImgFile").click(); };
+$("postImgFile").onchange = e => {
   const files = Array.from(e.target.files || []);
   e.target.value = "";
   if (!files.length) return;
   const token = $("token").value.trim();
-  if (!token) { $("wImgStatus").textContent = "请先填写上方 GitHub 访问令牌。"; return; }
+  if (!token) { $("postImgStatus").textContent = "请先填写上方 GitHub 访问令牌。"; return; }
   articleImgQueue = articleImgQueue.concat(files);
   processArticleQueue();
 };
 function processArticleQueue(){
   if (!articleImgQueue.length) return;
   if (articleImgCount() >= MAX_ARTICLE_IMGS) {
-    $("wImgStatus").textContent = "一篇文章最多只能加" + MAX_ARTICLE_IMGS + "张图片。";
+    $("postImgStatus").textContent = "一篇文章最多只能加" + MAX_ARTICLE_IMGS + "张图片。";
     articleImgQueue = [];
     return;
   }
   const file = articleImgQueue[0];
   if (!file.type.startsWith("image/")) { articleImgQueue.shift(); processArticleQueue(); return; }
   if (file.size > 15 * 1024 * 1024) {
-    $("wImgStatus").textContent = "有一张图片超过15MB，已跳过。";
+    $("postImgStatus").textContent = "有一张图片超过15MB，已跳过。";
     articleImgQueue.shift(); processArticleQueue(); return;
   }
   imgMode = "article";
@@ -525,13 +516,13 @@ async function articleDirectUpload(file){
     const blob = await compressImage(file);
     await uploadArticleImageBlob(blob, token);
   } catch(err){
-    $("wImgStatus").textContent = "上传失败：" + err.message;
+    $("postImgStatus").textContent = "上传失败：" + err.message;
   }
   articleImgQueue.shift();
   processArticleQueue();
 }
 function insertImageToBody(url){
-  const ta = $("body");
+  const ta = $("postBody");
   const tag = "\n![](" + url + ")\n";
   const s = (ta.selectionStart != null) ? ta.selectionStart : ta.value.length;
   const e = (ta.selectionEnd != null) ? ta.selectionEnd : ta.value.length;
@@ -551,7 +542,7 @@ async function uploadArticleImageBlob(blob, token){
   const url = "https://lslq6.github.io/doraemon-blog/" + path;
   insertImageToBody(url);
   const n = articleImgCount();
-  $("wImgStatus").textContent = "上传成功 ✅（" + n + "/" + MAX_ARTICLE_IMGS + "）";
+  $("postImgStatus").textContent = "上传成功 ✅（" + n + "/" + MAX_ARTICLE_IMGS + "）";
 }
 
 /* ===== 商品图片上传：选手机照片 → 自己裁剪 → 传到 GitHub 仓库（支持多张，最多5张） ===== */
@@ -560,7 +551,7 @@ let addImgs = [];
 let editImgs = [];
 let imgMode = "add"; // "add" 上架表单 | "edit" 编辑弹窗
 function imgArr(){ return imgMode === "edit" ? editImgs : addImgs; }
-function imgStatus(){ return $(imgMode === "edit" ? "eImgUploadStatus" : (imgMode === "article" ? "wImgStatus" : "imgUploadStatus")); }
+function imgStatus(){ return $(imgMode === "edit" ? "eImgUploadStatus" : (imgMode === "article" ? "postImgStatus" : "imgUploadStatus")); }
 function renderImgBox(mode){
   const isEdit = mode === "edit";
   const box = $(isEdit ? "eImgsBox" : "pImgsBox");
@@ -642,8 +633,8 @@ document.querySelectorAll("#cropModal [data-ratio]").forEach(b => {
 $("cropCancel").onclick = () => {
   $("cropModal").style.display = "none";
   if (cropper) { cropper.destroy(); cropper = null; }
-  $("pImgFile").value = ""; $("eImgFile").value = ""; $("wImgFile").value = "";
-  if (imgMode === "article") { articleImgQueue = []; $("wImgStatus").textContent = "已取消。"; }
+  $("pImgFile").value = ""; $("eImgFile").value = ""; $("postImgFile").value = "";
+  if (imgMode === "article") { articleImgQueue = []; $("postImgStatus").textContent = "已取消。"; }
 };
 $("cropConfirm").onclick = async () => {
   const token = $("token").value.trim();
@@ -666,7 +657,7 @@ $("cropConfirm").onclick = async () => {
     imgStatus().textContent = "上传失败：" + err.message;
     if (imgMode === "article") { articleImgQueue.shift(); processArticleQueue(); }
   } finally {
-    $("pImgFile").value = ""; $("eImgFile").value = ""; $("wImgFile").value = "";
+    $("pImgFile").value = ""; $("eImgFile").value = ""; $("postImgFile").value = "";
   }
 };
 async function uploadImageBlobByMode(blob, token){
