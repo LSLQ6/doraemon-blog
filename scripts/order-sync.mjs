@@ -83,7 +83,7 @@ function addOrder(key, net, txRaw, valueRaw, timeMs, fromAddr) {
   const one = {
     id: tx, tx: tx,
     productId: p ? p.id : null,
-    productName: p ? p.name : "未知商品（" + amount + " USDT，待确认）",
+    productName: p ? p.name : "未知商品（" + amount + " USD，待确认）",
     price: p ? p.price : amount,
     chain: key, chainLabel: net.label,
     from: fromAddr || "", time: fmtT(timeMs),
@@ -208,7 +208,7 @@ async function notifyNewOrders(list){
   const to = process.env.NOTIFY_EMAIL || "";
   if(!apiKey || !to || !list.length) return;
   const lines = list.map(o =>
-    "• " + o.time + "｜" + o.chainLabel + "｜" + o.price + " USDT｜" + o.productName + "｜交易 " + String(o.tx).slice(0, 20) + "…"
+    "• " + o.time + "｜" + o.chainLabel + "｜" + o.price + " USD｜" + o.productName + "｜交易 " + String(o.tx).slice(0, 20) + "…"
   ).join("\n");
   try{
     const r = await fetch("https://api.resend.com/emails", {
@@ -217,7 +217,7 @@ async function notifyNewOrders(list){
       body: JSON.stringify({
         from: "哆啦A梦小店 <onboarding@resend.dev>",
         to: [to],
-        subject: "【待发货】收到 " + list.length + " 笔新的 USDT 付款",
+        subject: "【待发货】收到 " + list.length + " 笔新的 USD 付款",
         text: "你的小店收到新的付款，请及时发货：\n\n" + lines +
           "\n\n管理后台：https://lslq6.github.io/doraemon-blog/admin/"
       })
