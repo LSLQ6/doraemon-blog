@@ -120,6 +120,12 @@ select.psel { padding:8px 10px; font-size:.9rem; border:1px solid var(--border);
 <input type="text" id="excerpt" placeholder="会显示在首页列表里">
 <label>正文（支持 Markdown）</label>
 <textarea id="body" placeholder="在这里写正文……"></textarea>
+<div style="display:flex;gap:10px;align-items:center;margin:10px 0 2px">
+<button type="button" class="mini" id="wImgBtn">📷 添加图片（最多8张）</button>
+<input type="file" id="wImgFile" accept="image/*" multiple class="hidden">
+<span class="hint" id="wImgStatus" style="margin:0"></span>
+</div>
+<p class="hint">从手机相册选照片，可自定义裁剪，上传后自动插入到正文光标处。</p>
 <button class="publish" id="publishBtn">发布文章</button>
 </div>
 
@@ -178,6 +184,22 @@ select.psel { padding:8px 10px; font-size:.9rem; border:1px solid var(--border);
 <div style="display:flex;gap:10px;margin-top:18px">
 <button type="button" class="mini" id="editCancel" style="flex:1;background:#6b6b6b">取消</button>
 <button type="button" class="mini green" id="editSave" style="flex:1">保存修改</button>
+</div>
+</div>
+</div>
+
+<div id="editPostModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999;align-items:center;justify-content:center;padding:16px">
+<div style="background:#fff;border-radius:12px;max-width:540px;width:100%;padding:18px;max-height:92vh;overflow:auto">
+<div style="font-weight:700;margin-bottom:8px">修改文章</div>
+<input type="hidden" id="epFile">
+<label>标题</label><input type="text" id="epTitle">
+<label>日期</label><input type="date" id="epDate">
+<label>摘要（一句话）</label><input type="text" id="epExcerpt">
+<label>正文（支持 Markdown）</label><textarea id="epBody"></textarea>
+<div class="hint" id="epStatus" style="margin:8px 0"></div>
+<div style="display:flex;gap:10px;margin-top:14px">
+<button type="button" class="mini" id="epCancel" style="flex:1;background:#6b6b6b">取消</button>
+<button type="button" class="mini green" id="epSave" style="flex:1">保存修改</button>
 </div>
 </div>
 </div>
@@ -344,11 +366,15 @@ function renderList(list) {
     d.className = "d";
     d.textContent = p.date + " · " + (p.category || "");
     meta.appendChild(t); meta.appendChild(d);
+    const edt = document.createElement("button");
+    edt.className = "mini";
+    edt.textContent = "修改";
+    edt.onclick = () => openEditPost(p);
     const del = document.createElement("button");
     del.className = "del";
     del.textContent = "删除";
     del.onclick = () => deletePost(p, del);
-    div.appendChild(meta); div.appendChild(del);
+    div.appendChild(meta); div.appendChild(edt); div.appendChild(del);
     box.appendChild(div);
   });
 }
@@ -382,13 +408,159 @@ async function deletePost(p, btn) {
   }
 }
 
+/* ===== 修改已发布文章 ===== */
+function parsePostMd(text){
+  const m = text.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+  const meta = {};
+  if(m){
+    m[1].split("\n").forEach(l => {
+      const i = l.indexOf(":");
+      if(i > 0) meta[l.slice(0, i).trim()] = l.slice(i + 1).trim();
+    });
+    return { meta, body: m[2] };
+  }
+  return { meta, body: text };
+}
+async function openEditPost(p){
+  const token = $("token").value.trim();
+  if (!token) return setStatus("请先填写 GitHub 访问令牌。", "err");
+  try {
+    setStatus("正在读取《" + p.title + "》…", "info");
+    const f = await gh("posts/" + p.file, token);
+    const { meta, body } = parsePostMd(b64dec(f.content));
+    $("epFile").value = p.file;
+    $("epTitle").value = p.title || meta.title || "";
+    $("epDate").value = p.date || meta.date || "";
+    $("epExcerpt").value = p.excerpt || meta.excerpt || "";
+    $("epBody").value = (body || "").replace(/\n$/, "");
+    $("epStatus").textContent = "";
+    $("editPostModal").style.display = "flex";
+    setStatus("", "");
+  } catch(e){ setStatus("读取失败：" + e.message, "err"); }
+}
+$("epCancel").onclick = () => { $("editPostModal").style.display = "none"; };
+$("epSave").onclick = async () => {
+  const token = $("token").value.trim();
+  if (!token) return setStatus("请先填写 GitHub 访问令牌。", "err");
+  const file = $("epFile").value;
+  const title = $("epTitle").value.trim();
+  const date = $("epDate").value || new Date().toISOString().slice(0, 10);
+  const excerpt = $("epExcerpt").value.trim();
+  const body = $("epBody").value.trim();
+  if (!title || !body) return ($("epStatus").textContent = "标题和正文不能为空。");
+  const btn = $("epSave");
+  btn.disabled = true;
+  try {
+    $("epStatus").textContent = "正在保存…";
+    const f = await gh("posts/" + file, token);
+    const { meta } = parsePostMd(b64dec(f.content));
+    const category = meta.category || "生活";
+    const md = "---\ntitle: " + title.replace(/\n/g, " ") +
+      "\ndate: " + date + "\ncategory: " + String(category).replace(/\n/g, " ") +
+      "\nexcerpt: " + excerpt.replace(/\n/g, " ") + "\n---\n\n" + body + "\n";
+    await gh("posts/" + file, token, "PUT", {
+      message: "修改文章：" + title,
+      content: b64(md),
+      sha: f.sha,
+      branch: BRANCH
+    });
+    const idx = await gh("posts.json", token);
+    const list = JSON.parse(b64dec(idx.content));
+    const it = list.find(x => x.file === file);
+    if (it) { it.title = title; it.date = date; it.excerpt = excerpt; }
+    await gh("posts.json", token, "PUT", {
+      message: "更新文章索引",
+      content: b64(JSON.stringify(list)),
+      sha: idx.sha,
+      branch: BRANCH
+    });
+    renderList(list);
+    $("editPostModal").style.display = "none";
+    setStatus("《" + title + "》已保存修改。", "ok");
+  } catch(e){
+    $("epStatus").textContent = "保存失败：" + e.message;
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+/* ===== 写文章图片上传：手机相册 → 自定义裁剪 → 传到 images/posts/ → 插入正文（最多8张） ===== */
+const MAX_ARTICLE_IMGS = 8;
+let articleImgQueue = [];
+function articleImgCount(){
+  const m = ($("body").value || "").match(/!\[[^\]]*\]\([^)]+\)/g);
+  return m ? m.length : 0;
+}
+$("wImgBtn").onclick = () => { imgMode = "article"; $("wImgFile").click(); };
+$("wImgFile").onchange = e => {
+  const files = Array.from(e.target.files || []);
+  e.target.value = "";
+  if (!files.length) return;
+  const token = $("token").value.trim();
+  if (!token) { $("wImgStatus").textContent = "请先填写上方 GitHub 访问令牌。"; return; }
+  articleImgQueue = articleImgQueue.concat(files);
+  processArticleQueue();
+};
+function processArticleQueue(){
+  if (!articleImgQueue.length) return;
+  if (articleImgCount() >= MAX_ARTICLE_IMGS) {
+    $("wImgStatus").textContent = "一篇文章最多只能加" + MAX_ARTICLE_IMGS + "张图片。";
+    articleImgQueue = [];
+    return;
+  }
+  const file = articleImgQueue[0];
+  if (!file.type.startsWith("image/")) { articleImgQueue.shift(); processArticleQueue(); return; }
+  if (file.size > 15 * 1024 * 1024) {
+    $("wImgStatus").textContent = "有一张图片超过15MB，已跳过。";
+    articleImgQueue.shift(); processArticleQueue(); return;
+  }
+  imgMode = "article";
+  pendingCropFile = file;
+  if (!window.Cropper) { articleDirectUpload(file); return; }
+  openCropper(file);
+}
+async function articleDirectUpload(file){
+  const token = $("token").value.trim();
+  try {
+    const blob = await compressImage(file);
+    await uploadArticleImageBlob(blob, token);
+  } catch(err){
+    $("wImgStatus").textContent = "上传失败：" + err.message;
+  }
+  articleImgQueue.shift();
+  processArticleQueue();
+}
+function insertImageToBody(url){
+  const ta = $("body");
+  const tag = "\n![](" + url + ")\n";
+  const s = (ta.selectionStart != null) ? ta.selectionStart : ta.value.length;
+  const e = (ta.selectionEnd != null) ? ta.selectionEnd : ta.value.length;
+  ta.value = ta.value.slice(0, s) + tag + ta.value.slice(e);
+  ta.focus();
+}
+async function uploadArticleImageBlob(blob, token){
+  const base64 = await blobToBase64(blob);
+  const ext = blob.type.includes("png") ? "png" : (blob.type.includes("webp") ? "webp" : "jpg");
+  const fname = Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8) + "." + ext;
+  const path = "images/posts/" + fname;
+  await gh(path, token, "PUT", {
+    message: "上传文章图片 " + fname,
+    content: base64,
+    branch: BRANCH
+  });
+  const url = "https://lslq6.github.io/doraemon-blog/" + path;
+  insertImageToBody(url);
+  const n = articleImgCount();
+  $("wImgStatus").textContent = "上传成功 ✅（" + n + "/" + MAX_ARTICLE_IMGS + "）";
+}
+
 /* ===== 商品图片上传：选手机照片 → 自己裁剪 → 传到 GitHub 仓库（支持多张，最多5张） ===== */
 const MAX_IMGS = 5;
 let addImgs = [];
 let editImgs = [];
 let imgMode = "add"; // "add" 上架表单 | "edit" 编辑弹窗
 function imgArr(){ return imgMode === "edit" ? editImgs : addImgs; }
-function imgStatus(){ return $(imgMode === "edit" ? "eImgUploadStatus" : "imgUploadStatus"); }
+function imgStatus(){ return $(imgMode === "edit" ? "eImgUploadStatus" : (imgMode === "article" ? "wImgStatus" : "imgUploadStatus")); }
 function renderImgBox(mode){
   const isEdit = mode === "edit";
   const box = $(isEdit ? "eImgsBox" : "pImgsBox");
@@ -470,7 +642,8 @@ document.querySelectorAll("#cropModal [data-ratio]").forEach(b => {
 $("cropCancel").onclick = () => {
   $("cropModal").style.display = "none";
   if (cropper) { cropper.destroy(); cropper = null; }
-  $("pImgFile").value = ""; $("eImgFile").value = "";
+  $("pImgFile").value = ""; $("eImgFile").value = ""; $("wImgFile").value = "";
+  if (imgMode === "article") { articleImgQueue = []; $("wImgStatus").textContent = "已取消。"; }
 };
 $("cropConfirm").onclick = async () => {
   const token = $("token").value.trim();
@@ -488,13 +661,23 @@ $("cropConfirm").onclick = async () => {
     } else {
       throw new Error("没有可上传的图片");
     }
-    await uploadImageBlob(blob, token);
+    await uploadImageBlobByMode(blob, token);
   } catch (err) {
     imgStatus().textContent = "上传失败：" + err.message;
+    if (imgMode === "article") { articleImgQueue.shift(); processArticleQueue(); }
   } finally {
-    $("pImgFile").value = ""; $("eImgFile").value = "";
+    $("pImgFile").value = ""; $("eImgFile").value = ""; $("wImgFile").value = "";
   }
 };
+async function uploadImageBlobByMode(blob, token){
+  if (imgMode === "article") {
+    await uploadArticleImageBlob(blob, token);
+    articleImgQueue.shift();
+    processArticleQueue();
+  } else {
+    await uploadImageBlob(blob, token);
+  }
+}
 async function directUploadFallback(file) {
   const token = $("token").value.trim();
   imgStatus().textContent = "正在上传…";
