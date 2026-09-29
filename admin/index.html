@@ -710,16 +710,24 @@ async function loadSbOrders(){
       id: o.id, productId: o.product_id, productName: o.product_name, price: o.price,
       chain: o.chain, chainLabel: ({bsc:"BSC",arb:"Arbitrum",eth:"Ethereum",plasma:"Plasma",aptos:"Aptos",sol:"SOL",tron:"TRON",freebie:"免费领取"})[o.chain] || o.chain || "",
       tx: o.tx, time: fmtT(o.created_at), status: o.status, buyer: buyerMap[o.id] || "",
-      ship: normShip(o.ship), address: o.address || null
+      ship: normShip(o.ship), address: o.address || null, cancelledAt: o.cancelled_at || null
     }));
     list.forEach(o => { o.ptype = ptypeMap[o.productId] || "virtual"; });
-    renderOrders(list);
-    renderStats(list);
-    setStatus(list.length ? ("共 " + list.length + " 笔订单。") : "还没有订单。", "ok");
+    const visible = list.filter(o => !isCancelledGone(o));
+    renderOrders(visible);
+    renderStats(visible);
+    setStatus(visible.length ? ("共 " + visible.length + " 笔订单。") : "还没有订单。", "ok");
   }catch(e){ setStatus("加载失败：" + e.message, "err"); }
 }
 $("loadOrdersBtn").onclick = loadSbOrders;
 function badge(st){ return '<span class="obadge ' + st + '">' + (OSTATUS[st] || st) + '</span>'; }
+/* 撤销超过 24 小时的订单对买卖双方都不可见 */
+function isCancelledGone(o){
+  if((o.status || "") !== "cancelled") return false;
+  var ca = o.cancelledAt || o.cancelled_at;
+  if(!ca) return false;
+  return (Date.now() - new Date(ca).getTime()) > 24*3600*1000;
+}
 function renderOrders(list){
   const box = $("orderList"); box.innerHTML = "";
   if(!list.length){ box.innerHTML = '<div class="empty">暂无订单</div>'; return; }
@@ -771,7 +779,7 @@ async function revokeOrder(o, btn){
   btn.disabled = true;
   try{
     setStatus("正在撤销订单…", "info");
-    const r = await sbs.from("orders").update({ status: "cancelled" }).eq("id", o.id);
+    const r = await sbs.from("orders").update({ status: "cancelled", cancelled_at: new Date().toISOString() }).eq("id", o.id);
     if(r.error) throw new Error(r.error.message);
     setStatus("订单已撤销，买家页面会自动同步。", "ok");
     loadSbOrders();
