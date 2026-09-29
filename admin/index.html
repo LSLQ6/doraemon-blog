@@ -132,6 +132,8 @@ select.psel { padding:8px 10px; font-size:.9rem; border:1px solid var(--border);
 </div>
 <div id="sbOrdersBox" class="hidden">
 <p style="font-size:.9rem">已登录：<b id="sbWho"></b> <button class="mini" id="sbLogoutBtn">退出</button> <button class="mini" id="loadOrdersBtn">刷新订单</button></p>
+<div style="display:flex;gap:8px;margin:0 0 6px"><input type="text" id="ordQuery" placeholder="订单号查询：输入8位订单号" style="flex:1"><button class="mini" id="ordSearchBtn">查询</button><button class="mini" id="ordClearBtn" style="background:#6b6b6b">清除</button></div>
+<p id="ordQueryMsg" class="hint" style="margin:0 0 8px"></p>
 <div id="orderList"></div>
 <label>月度统计</label>
 <div id="statBox"><div class="empty">加载订单后自动统计</div></div>
@@ -719,6 +721,7 @@ $("sbLogoutBtn").onclick = async () => {
 async function loadSbOrders(){
   if(!sbs || !sbIsAdmin) return setStatus("请先登录管理员账号。", "err");
   setStatus("正在加载订单…", "info");
+  $("ordQuery").value = ""; $("ordQueryMsg").textContent = "";
   try{
     const r = await sbs.from("orders").select("*").order("created_at", { ascending: false });
     if(r.error) throw new Error(r.error.message);
@@ -740,12 +743,25 @@ async function loadSbOrders(){
     }));
     list.forEach(o => { o.ptype = ptypeMap[o.productId] || "virtual"; });
     const visible = list.filter(o => !isCancelledGone(o));
+    sbOrdersCache = visible;
     renderOrders(visible);
     renderStats(visible);
     setStatus(visible.length ? ("共 " + visible.length + " 笔订单。") : "还没有订单。", "ok");
   }catch(e){ setStatus("加载失败：" + e.message, "err"); }
 }
+var sbOrdersCache = [];
 $("loadOrdersBtn").onclick = loadSbOrders;
+/* ===== 按订单号查询（8 位订单号，模糊匹配） ===== */
+function applyOrderQuery(){
+  var q = (($("ordQuery").value || "").trim().toUpperCase().replace(/-/g, ""));
+  if(!q){ renderOrders(sbOrdersCache); $("ordQueryMsg").textContent = ""; return; }
+  var list = sbOrdersCache.filter(function(o){ return shortId8(o.id).indexOf(q) !== -1; });
+  renderOrders(list);
+  $("ordQueryMsg").textContent = list.length ? ("找到 " + list.length + " 笔订单（订单号含 " + q + "）") : "没有找到匹配的订单。";
+}
+$("ordSearchBtn").onclick = applyOrderQuery;
+$("ordClearBtn").onclick = function(){ $("ordQuery").value = ""; $("ordQueryMsg").textContent = ""; renderOrders(sbOrdersCache); };
+$("ordQuery").addEventListener("keydown", function(e){ if(e.key === "Enter") applyOrderQuery(); });
 function badge(st){ return '<span class="obadge ' + st + '">' + (OSTATUS[st] || st) + '</span>'; }
 /* 撤销超过 1 小时的订单对买卖双方都不可见 */
 function isCancelledGone(o){
