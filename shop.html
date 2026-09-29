@@ -24,6 +24,7 @@
 .product .sold { color:var(--muted); font-size:.82rem; margin:0 0 4px; }
 .product .stk { color:var(--text); font-size:.82rem; font-weight:700; margin:0 0 10px; }
 .product .stk.none { display:none; }
+.longpress-hint { color:#d32f2f; font-size:12px; margin:6px 16px 0; }
 .order-box { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px; margin:16px auto; max-width:520px; text-align:left; font-size:.9rem; }
 .order-box .rowline { display:flex; justify-content:space-between; gap:12px; padding:4px 0; }
 .order-box .rowline span:first-child { color:var(--muted); flex-shrink:0; }
@@ -358,7 +359,7 @@ function render(){
   document.getElementById("emptyShop").classList.add("hidden");
   list.forEach(function(p){
     var div=document.createElement("div"); div.className="product";
-    div.innerHTML = imgHtml(p) + '<div class="info"><p class="nm"></p><p class="ds"></p><p class="pr"></p><p class="sold"></p><p class="stk none"></p><button class="buy-btn">购买</button></div>';
+    div.innerHTML = imgHtml(p) + '<p class="longpress-hint">⚠️ 长按图片即可预览</p>' + '<div class="info"><p class="nm"></p><p class="ds"></p><p class="pr"></p><p class="sold"></p><p class="stk none"></p><button class="buy-btn">购买</button></div>';
     div.querySelector(".nm").textContent=p.name;
     var ptag = document.createElement("span"); ptag.className = "ptype-tag"; ptag.textContent = ptypeLabel(p);
     div.querySelector(".nm").appendChild(ptag);
