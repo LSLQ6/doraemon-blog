@@ -137,7 +137,7 @@
 <section id="view-success" class="hidden">
 <div class="success">
 <div class="tick">✅</div>
-<h2>支付成功！</h2>
+<h2 id="successTitle">支付成功！</h2>
 <p id="orderStatusLine" class="ostatus"></p>
 <div class="order-box" id="orderBox"></div>
 <p class="orefresh">订单状态由店主在后台更新，本页面每分钟自动刷新，无需重复付款。</p>
@@ -183,7 +183,7 @@ document.getElementById("year").textContent = new Date().getFullYear();
 var SB_URL = "https://vvwyheyojnmeyzbisxnq.supabase.co";
 var SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ2d3loZXlvam5tZXl6YmlzeG5xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MTE0MTQsImV4cCI6MjEwNjE4NzQxNH0.U2ZMJZbgm-5cxP7M383ymjX22UW9ZuvtgU8owXV8oR8";
 var sb = (window.supabase ? window.supabase.createClient(SB_URL, SB_KEY) : null);
-var myUser = null, pendingNet = null, authMode = "login";
+var myUser = null, pendingNet = null, pendingFreeClaim = null, authMode = "login";
 var TRANSFER = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 var NETS = {
   bsc:    { label:"BSC（BEP20）", kind:"evm", rpc:"https://bsc.publicnode.com", token:"0x55d398326f99059fF775485246999027B3197955", dec:18, scan:"https://bscscan.com/tx/", seller:"0x5a93d426357cfc7b83d27cec9d4776b05fc73149" },
@@ -285,7 +285,7 @@ document.getElementById("authGo").onclick = function(){
   job.then(function(r){
     document.getElementById("authGo").disabled = false;
     if(r.error) return authError(r.error.message === "Invalid login credentials" ? "邮箱或密码不对。" : r.error.message);
-    if(!pendingNet) closeAuth();
+    if(!pendingNet && !pendingFreeClaim) closeAuth();
   }).catch(function(e){ document.getElementById("authGo").disabled = false; authError("出错了：" + e.message); });
 };
 document.getElementById("authPwd").addEventListener("keydown", function(e){ if(e.key === "Enter") document.getElementById("authGo").click(); });
@@ -298,7 +298,7 @@ async function refreshAuth(){
   renderAuthArea();
 }
 function checkHashOrders(){ if(location.hash === "#myorders" && myUser){ stopOrder(); stopStatus(); loadMyOrders(); show("view-myorders"); } }
-if(sb){ sb.auth.onAuthStateChange(function(){ refreshAuth().then(function(){ if(myUser && pendingNet){ var n = pendingNet; pendingNet = null; closeAuth(); chooseNet(n.key, n.p, n.addr); } checkHashOrders(); }); }); refreshAuth().then(checkHashOrders); }
+if(sb){ sb.auth.onAuthStateChange(function(){ refreshAuth().then(function(){ if(myUser && pendingNet){ var n = pendingNet; pendingNet = null; closeAuth(); chooseNet(n.key, n.p, n.addr); } if(myUser && pendingFreeClaim){ var c = pendingFreeClaim; pendingFreeClaim = null; closeAuth(); claimFreebieOrder(c.p, c.email); } checkHashOrders(); }); }); refreshAuth().then(checkHashOrders); }
 /* ===== 搜索 & 主题 ===== */
 document.getElementById("searchToggle").onclick = function(){
   var bar = document.getElementById("searchBar");
@@ -362,10 +362,10 @@ function render(){
     var div=document.createElement("div"); div.className="product";
     div.innerHTML = imgHtml(p) + '<p class="longpress-hint">⚠️ 长按图片即可预览</p>' + '<div class="info"><p class="nm"></p><p class="ds"></p><p class="pr"></p><p class="sold"></p><p class="stk none"></p><button class="buy-btn">购买</button></div>';
     div.querySelector(".nm").textContent=p.name;
-    var ptag = document.createElement("span"); ptag.className = "ptype-tag"; ptag.textContent = ptypeLabel(p);
+    var ptag = document.createElement("span"); ptag.className = "ptype-tag" + (ptypeOf(p) === "freebie" ? " free" : ""); ptag.textContent = ptypeLabel(p);
     div.querySelector(".nm").appendChild(ptag);
     div.querySelector(".ds").textContent=p.desc||"";
-    div.querySelector(".pr").textContent=fmtPrice(p.price);
+    div.querySelector(".pr").textContent = (Number(p.price) === 0) ? "免费" : fmtPrice(p.price);
     div.querySelector(".sold").textContent="已售出 "+(SOLD[p.id]||0)+" 件";
     var left = stockLeft(p);
     var btn = div.querySelector(".buy-btn");
@@ -446,10 +446,11 @@ function openPayMethods(p){
   stopOrder();
   var box = document.getElementById("payMethodBox");
   box.innerHTML = "";
+  var isFree = Number(p.price) === 0;
   var t = document.createElement("p"); t.style.cssText = "margin:0 0 4px;font-weight:700;font-size:1.05rem;"; t.textContent = p.name;
-  var pr = document.createElement("p"); pr.style.cssText = "margin:0 0 14px;font-weight:800;font-size:1.15rem;color:var(--text);"; pr.textContent = fmtPrice(p.price);
+  var pr = document.createElement("p"); pr.style.cssText = "margin:0 0 14px;font-weight:800;font-size:1.15rem;color:var(--text);"; pr.textContent = isFree ? "免费" : fmtPrice(p.price);
   box.appendChild(t); box.appendChild(pr);
-  if(ptypeOf(p) === "physical"){
+  if(ptypeOf(p) === "physical" && !isFree){
     var af = document.createElement("div"); af.className = "addr-form";
     af.innerHTML = '<h4>📦 实物商品，请填写收货地址</h4>' +
       '<div class="row2"><input id="pmAddrName" placeholder="收货人姓名" maxlength="20" style="flex:1"><input id="pmAddrPhone" placeholder="手机号码" maxlength="15" inputmode="tel" style="flex:1"></div>' +
@@ -458,9 +459,16 @@ function openPayMethods(p){
   }
   box.appendChild(pmTitle("选择支付方式"));
   var b1 = pmBtn(ICON_USDT, "USDT支付");
-  b1.onclick = function(){ showPayNets(p); };
+  b1.onclick = function(){
+    if(isFree){ showFreebieForm(p); return; }
+    var addr = readPmAddr(p); if(addr === false) return;
+    showPayNets(p, addr);
+  };
   var b2 = pmBtn('<span class="pm-emoji">💳</span>', "其他支付");
-  b2.onclick = showComingSoon;
+  b2.onclick = function(){
+    if(isFree){ showFreebieForm(p); return; }
+    showComingSoon();
+  };
   box.appendChild(b1); box.appendChild(b2);
   box.appendChild(pmBack("取消", closePayMethods));
   document.getElementById("payMethodModal").classList.remove("hidden");
@@ -477,14 +485,14 @@ function readPmAddr(p){
   if(detail.length < 5){ alert("请填写完整的收货地址。"); return false; }
   return { name: name, phone: phone, detail: detail };
 }
-function showPayNets(p){
+function showPayNets(p, addr){
   var box = document.getElementById("payMethodBox");
   box.innerHTML = "";
   box.appendChild(pmTitle("选择支付网络"));
   NET_ORDER.forEach(function(key){
     var net = NETS[key];
     var b = pmBtn('<img src="'+NET_ICON[key]+'" width="30" height="30" style="border-radius:50%;flex-shrink:0;display:block" alt="">', net.label);
-    b.onclick = (function(k){ return function(){ var addr = readPmAddr(p); if(addr === false) return; closePayMethods(); showOrderView(p); chooseNet(k, p, addr); }; })(key);
+    b.onclick = (function(k){ return function(){ closePayMethods(); showOrderView(p); chooseNet(k, p, addr); }; })(key);
     box.appendChild(b);
   });
   box.appendChild(pmBack("← 返回", function(){ openPayMethods(p); }));
@@ -498,6 +506,65 @@ function showComingSoon(){
   box.appendChild(pmBack("← 返回", function(){ openPayMethods(payMethodProduct); }));
 }
 function closePayMethods(){ document.getElementById("payMethodModal").classList.add("hidden"); }
+/* ===== 0 元商品：填邮箱直接领取成功 ===== */
+function showFreebieForm(p){
+  var box = document.getElementById("payMethodBox");
+  box.innerHTML = "";
+  box.appendChild(pmTitle("免费领取 · " + (p.name || "")));
+  var hint = document.createElement("p"); hint.style.cssText = "margin:0 0 10px;color:#6b6b6b;font-size:.9rem;";
+  hint.textContent = "输入收货邮箱，领取成功后发货内容会发送到该邮箱。";
+  box.appendChild(hint);
+  var inp = document.createElement("input"); inp.id = "freebieEmail"; inp.type = "email"; inp.placeholder = "收货邮箱"; inp.autocomplete = "email";
+  inp.className = "auth-input"; inp.style.marginBottom = "4px";
+  inp.value = (myUser && myUser.email) || "";
+  box.appendChild(inp);
+  var err = document.createElement("p"); err.id = "freebieErr"; err.style.cssText = "display:none;color:#b3261e;font-size:.85rem;margin:8px 0 0;";
+  box.appendChild(err);
+  var go = pmBtn("🎁", "确认领取"); go.id = "freebieGo";
+  go.onclick = function(){ claimFreebieOrder(p); };
+  box.appendChild(go);
+  box.appendChild(pmBack("← 返回", function(){ openPayMethods(p); }));
+  setTimeout(function(){ inp.focus(); }, 50);
+}
+function claimFreebieOrder(p, email){
+  email = (email !== undefined) ? email : (((document.getElementById("freebieEmail") || {}).value) || "").trim();
+  var errEl = document.getElementById("freebieErr");
+  function fail(msg){ if(errEl){ errEl.textContent = msg; errEl.style.display = "block"; } else { alert(msg); } }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail("请输入正确的邮箱地址。");
+  var left0 = stockLeft(p);
+  if(left0 !== null && left0 <= 0) return fail("这个福利已经领完了。");
+  if(!myUser){ pendingFreeClaim = { p: p, email: email }; closePayMethods(); openAuth("领取免费福利需要先登录 / 注册。"); return; }
+  var goBtn = document.getElementById("freebieGo"); if(goBtn) goBtn.disabled = true;
+  var txid = "freebie-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  sb.from("orders").insert({
+    user_id: myUser.id, product_id: p.id, product_name: p.name, price: 0,
+    chain: "freebie", tx: txid, status: "pending",
+    ship: { type: "virtual", deliveryEmail: email }
+  }).select("id").then(function(r){
+    if(r.error) throw r.error;
+    var newId = (r.data && r.data[0]) ? r.data[0].id : null;
+    closePayMethods();
+    showFreebieSuccess(p, newId, email);
+  }).catch(function(e){
+    if(goBtn) goBtn.disabled = false;
+    fail("领取失败：" + ((e && e.message) || e));
+  });
+}
+function showFreebieSuccess(p, orderId, email){
+  stopOrder(); show("view-success");
+  document.getElementById("successTitle").textContent = "领取成功！🎉";
+  var box = document.getElementById("orderBox");
+  function row(k,v){ var d=document.createElement("div"); d.className="rowline"; var a=document.createElement("span"); a.textContent=k; var b=document.createElement("span"); b.textContent=v; d.appendChild(a); d.appendChild(b); return d; }
+  box.innerHTML = "";
+  box.appendChild(row("订单号", shortId(orderId)));
+  box.appendChild(row("商品", p.name));
+  box.appendChild(row("金额", "免费"));
+  box.appendChild(row("收货邮箱", email));
+  box.appendChild(row("领取时间", new Date().toLocaleString("zh-CN",{hour12:false})));
+  paidOrderId = orderId;
+  setOrderStatus("pending");
+  refreshOrderStatus();
+}
 document.getElementById("payMethodModal").addEventListener("click", function(e){ if(e.target && e.target.id === "payMethodModal") closePayMethods(); });
 function showOrderView(p, needAddr, orderId){
   var s = document.getElementById("orderSummary");
@@ -759,6 +826,7 @@ function onPaid(tx){
 }
 function showPaidSuccess(txl, key, net, prod, orderId){
   stopOrder(); show("view-success");
+  document.getElementById("successTitle").textContent = "支付成功！";
   paidOrder={ tx:txl, net:net, name:prod.name, price:prod.price, time:new Date().toLocaleString("zh-CN",{hour12:false}) };
   paidOrderId = orderId;
   var box=document.getElementById("orderBox");
@@ -838,7 +906,7 @@ function loadMyOrders(){
       var badge = document.createElement("span"); badge.className = "obadge " + (o.status||"pending"); badge.textContent = OSTATUS_BADGE[o.status] || o.status;
       t.appendChild(badge);
       var d = document.createElement("div"); d.className = "d";
-      var net = NETS[o.chain] || {};
+      var net = NETS[o.chain] || (o.chain === "freebie" ? { label: "免费领取" } : {});
       d.innerHTML = "";
       d.appendChild(document.createTextNode("订单号 " + shortId(o.id) + " · " + fmtTime(o.created_at) + " · " + (net.label || o.chain || "") + " · "));
       if(o.tx && net.scan){ var a=document.createElement("a"); a.href=net.scan+o.tx; a.target="_blank"; a.rel="noopener"; a.style.color="var(--link)"; a.textContent="交易 "+String(o.tx).slice(0,10)+"…"; d.appendChild(a); }
