@@ -51,7 +51,6 @@ function renderList() {
     const a = document.createElement("a");
     a.className = "post-card";
     a.innerHTML =
-      '<p class="post-card-cat">' + (p.demo ? "示例 · " : "") + esc(p.category) + "</p>" +
       '<h3 class="post-card-title">' + esc(p.title) + "</h3>" +
       '<p class="post-card-excerpt">' + esc(p.excerpt) + "</p>" +
       '<p class="post-card-date">' + esc(p.date) + "</p>";
@@ -119,8 +118,7 @@ function parseFrontmatter(text) {
 }
 
 async function openPost(p) {
-  document.getElementById("postMeta").textContent =
-    (p.demo ? "示例 · " : "") + p.category + " · " + p.date;
+  document.getElementById("postMeta").textContent = p.date;
   document.getElementById("postTitle").textContent = p.title;
   const bodyEl = document.getElementById("postBody");
   bodyEl.innerHTML = "<p>加载中…</p>";
