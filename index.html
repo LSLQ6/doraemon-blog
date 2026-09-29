@@ -135,6 +135,18 @@
   var SB_URL = "https://vvwyheyojnmeyzbisxnq.supabase.co";
   var SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ2d3loZXlvam5tZXl6YmlzeG5xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MTE0MTQsImV4cCI6MjEwNjE4NzQxNH0.U2ZMJZbgm-5cxP7M383ymjX22UW9ZuvtgU8owXV8oR8";
   var sb = (window.supabase ? window.supabase.createClient(SB_URL, SB_KEY) : null);
+  /* 访客统计：记录今日访客 + 在线心跳（每天每访客只记一次，北京时间凌晨自动从 0 开始） */
+  (function(){
+    try{
+      var k = "visitor_id", vid = null;
+      try{ vid = localStorage.getItem(k); }catch(e){}
+      if(!vid){ vid = "v" + Date.now().toString(36) + Math.random().toString(36).slice(2, 10); try{ localStorage.setItem(k, vid); }catch(e){} }
+      function ping(){ if(sb && vid){ try{ sb.rpc("log_visit", { p_visitor_id: vid }).then(function(){}, function(){}); }catch(e){} } }
+      ping();
+      setInterval(ping, 3*60*1000);
+      window.addEventListener("pagehide", ping);
+    }catch(e){}
+  })();
   var myUser = null, authMode = "login";
   function renderUserMenu(){
     var m = document.getElementById("userMenu");
