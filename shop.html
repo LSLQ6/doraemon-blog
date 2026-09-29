@@ -241,7 +241,7 @@ function renderUserMenu(){
     od.onclick = function(){ toggleUserMenu(false); stopOrder(); stopStatus(); loadMyOrders(); show("view-myorders"); };
     m.appendChild(od);
     var out = document.createElement("button"); out.textContent = "退出";
-    out.onclick = function(){ toggleUserMenu(false); if(sb) sb.auth.signOut(); };
+    out.onclick = function(){ toggleUserMenu(false); revealedShips = {}; if(sb) sb.auth.signOut(); };
     m.appendChild(out);
   } else {
     var li = document.createElement("button"); li.textContent = "登录";
@@ -862,6 +862,7 @@ function normShip(o){
   if(typeof s === "string"){ try{ return JSON.parse(s); }catch(e){ return {}; } }
   return s || {};
 }
+var revealedShips = {};
 function shipBox(o){
   var ship = normShip(o);
   if(!ship.type) return null;
@@ -870,8 +871,37 @@ function shipBox(o){
   if(ship.type === "virtual"){
     title.textContent = "📧 虚拟商品发货信息（已发送至你的邮箱）";
     box.appendChild(title);
-    var pre = document.createElement("pre"); pre.textContent = ship.content || "";
-    box.appendChild(pre);
+    var oid = o.id;
+    if(revealedShips[oid]){
+      var pre = document.createElement("pre"); pre.textContent = ship.content || "";
+      box.appendChild(pre);
+    } else {
+      var lock = document.createElement("div"); lock.style.cssText = "margin-top:8px;";
+      var lmsg = document.createElement("div"); lmsg.style.cssText = "color:var(--muted);font-size:.9rem;";
+      lmsg.textContent = "🔒 发货内容已隐藏，输入账号登录密码后查看";
+      lock.appendChild(lmsg);
+      var inp = document.createElement("input"); inp.type = "password"; inp.placeholder = "账号登录密码"; inp.autocomplete = "current-password";
+      inp.className = "auth-input"; inp.style.cssText = "margin:8px 0 4px;";
+      lock.appendChild(inp);
+      var err = document.createElement("div"); err.style.cssText = "display:none;color:#b3261e;font-size:.85rem;margin:4px 0;";
+      lock.appendChild(err);
+      var btn = document.createElement("button"); btn.className = "check-btn"; btn.style.fontSize = ".85rem"; btn.textContent = "验证并查看";
+      btn.onclick = function(){
+        var pwd = inp.value || "";
+        if(!pwd){ err.textContent = "请输入密码。"; err.style.display = "block"; return; }
+        err.style.display = "none"; btn.disabled = true; btn.textContent = "验证中…";
+        sb.auth.signInWithPassword({ email: (myUser && myUser.email) || "", password: pwd }).then(function(r){
+          if(r.error) throw r.error;
+          revealedShips[oid] = true;
+          loadMyOrders();
+        }).catch(function(e){
+          btn.disabled = false; btn.textContent = "验证并查看";
+          err.textContent = "密码错误，请重试。"; err.style.display = "block";
+        });
+      };
+      lock.appendChild(btn);
+      box.appendChild(lock);
+    }
   } else {
     title.textContent = "🚚 " + (ship.carrierLabel || "快递") + " · 单号 " + (ship.trackingNo || "");
     box.appendChild(title);
