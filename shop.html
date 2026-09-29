@@ -893,11 +893,11 @@ function shipBox(o){
   return box;
 }
 function fmtTime(iso){ try{ var d=new Date(iso); var p=function(n){return String(n).padStart(2,"0");}; return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+" "+p(d.getHours())+":"+p(d.getMinutes()); }catch(e){ return ""; } }
-/* 撤销超过 24 小时的订单买家不可见 */
+/* 撤销超过 1 小时的订单买家不可见 */
 function isCancelledGone(o){
   if((o.status || "") !== "cancelled") return false;
   if(!o.cancelled_at) return false;
-  return (Date.now() - new Date(o.cancelled_at).getTime()) > 24*3600*1000;
+  return (Date.now() - new Date(o.cancelled_at).getTime()) > 3600*1000;
 }
 function loadMyOrders(){
   if(!myUser || !sb) return;
