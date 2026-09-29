@@ -636,7 +636,7 @@ function chooseNet(key,p,addr){
 function startPayPanel(key,p,dbId){
   stopOrder();
   var net=NETS[key];
-  document.getElementById("payAmount").textContent=fmtPrice(p.price)+"（"+p.price+" USD）";
+  document.getElementById("payAmount").textContent=fmtPrice(p.price)+"（"+p.price+" USDT）";
   document.getElementById("payNetLabel").textContent=net.label;
   document.getElementById("payNeedFull").textContent=p.price;
   document.getElementById("payAddr").textContent=net.seller;
