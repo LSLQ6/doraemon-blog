@@ -1170,41 +1170,21 @@ document.getElementById("cancelOrder").onclick=function(){
   } else backList();
 };
 </script>
-<div id="gateModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999;">
-  <div style="background:#fff;border-radius:14px;padding:26px 24px;width:300px;text-align:center;color:#1a1a1a;">
-    <p style="margin:0 0 12px;font-weight:700;">请输入后台密码</p>
-    <input type="password" id="gatePwd" placeholder="密码" style="width:100%;padding:10px 12px;font-size:1rem;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;" autocomplete="off">
-    <p id="gateErr" style="display:none;color:#b3261e;font-size:.85rem;margin:8px 0 0;">密码不对，再试试</p>
-    <div style="display:flex;gap:10px;margin-top:14px;">
-      <button id="gateCancel" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;">取消</button>
-      <button id="gateOk" style="flex:1;padding:10px;border:none;border-radius:8px;background:#1a1a1a;color:#fff;font-weight:700;cursor:pointer;">进入</button>
-    </div>
-  </div>
-</div>
 <script>
+/* 头像入口：已登录管理员点一下直接进后台，其他人点无反应 */
 (function(){
-  var PWD = "lsl206416@"; // 后台入口密码，想换找哆啦A梦改
-  var logo = document.getElementById("logoGate");
-  var modal = document.getElementById("gateModal");
-  var input = document.getElementById("gatePwd");
-  var err = document.getElementById("gateErr");
-  var clicks = 0, timer = null;
-  function openGate(){ err.style.display="none"; input.value=""; modal.classList.remove("hidden"); setTimeout(function(){ input.focus(); },50); }
-  function closeGate(){ modal.classList.add("hidden"); }
-  function tryEnter(){
-    if(input.value === PWD){ location.href = "admin/"; }
-    else { err.style.display="block"; input.value=""; input.focus(); }
-  }
-  logo.addEventListener("click", function(){
-    clicks++;
-    if(clicks >= 3){ clicks = 0; clearTimeout(timer); openGate(); return; }
-    clearTimeout(timer);
-    timer = setTimeout(function(){ clicks = 0; }, 700);
+  var lg = document.getElementById("logoGate");
+  if(!lg) return;
+  lg.addEventListener("click", async function(){
+    try{
+      if(typeof sb === "undefined" || !sb) return;
+      var s = await sb.auth.getSession();
+      var u = (s.data && s.data.session) ? s.data.session.user : null;
+      if(!u) return;
+      var p = await sb.from("profiles").select("is_admin").eq("id", u.id).single();
+      if(p.data && p.data.is_admin) location.href = "admin/";
+    }catch(e){}
   });
-  document.getElementById("gateOk").onclick = tryEnter;
-  document.getElementById("gateCancel").onclick = closeGate;
-  input.addEventListener("keydown", function(e){ if(e.key === "Enter") tryEnter(); });
-  modal.addEventListener("click", function(e){ if(e.target === modal) closeGate(); });
 })();
 </script>
 </body>
