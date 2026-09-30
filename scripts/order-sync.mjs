@@ -219,7 +219,7 @@ async function notifyNewOrders(list){
         to: [to],
         subject: "【待发货】收到 " + list.length + " 笔新的 USDT 付款",
         text: "你的小店收到新的付款，请及时发货：\n\n" + lines +
-          "\n\n管理后台：https://lslq6.github.io/doraemon-blog/admin/"
+          "\n\n管理后台：https://qixiaoyuang.github.io/qixiaoyuanboke/admin/"
       })
     });
     const j = await r.json().catch(() => ({}));
