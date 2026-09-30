@@ -228,7 +228,7 @@ select.psel { padding:8px 10px; font-size:.9rem; border:1px solid var(--border);
 <ol>
 <li>打开 GitHub → 右上角头像 → <code>Settings</code></li>
 <li>左下角 <code>Developer settings</code> → <code>Personal access tokens</code> → <code>Fine-grained tokens</code></li>
-<li>点击 <code>Generate new token</code>，Repository access 选 <code>Only select repositories</code>，勾选 <code>doraemon-blog</code></li>
+<li>点击 <code>Generate new token</code>，Repository access 选 <code>Only select repositories</code>，勾选 <code>qixiaoyuanboke</code></li>
 <li>Permissions 里找到 <code>Contents</code>，设为 <code>Read and write</code>，然后生成</li>
 <li>把生成的 token 复制，粘贴到本页上方的输入框即可</li>
 </ol>
@@ -236,7 +236,7 @@ select.psel { padding:8px 10px; font-size:.9rem; border:1px solid var(--border);
 </div>
 
 <script>
-const OWNER = "LSLQ6", REPO = "doraemon-blog", BRANCH = "main";
+const OWNER = "qixiaoyuang", REPO = "qixiaoyuanboke", BRANCH = "main";
 const $ = id => document.getElementById(id);
 $("postDate").value = new Date().toISOString().slice(0, 10);
 
@@ -539,7 +539,7 @@ async function uploadArticleImageBlob(blob, token){
     content: base64,
     branch: BRANCH
   });
-  const url = "https://lslq6.github.io/doraemon-blog/" + path;
+  const url = "https://qixiaoyuang.github.io/qixiaoyuanboke/" + path;
   insertImageToBody(url);
   const n = articleImgCount();
   $("postImgStatus").textContent = "上传成功 ✅（" + n + "/" + MAX_ARTICLE_IMGS + "）";
@@ -691,7 +691,7 @@ async function uploadImageBlob(blob, token) {
     content: base64,
     branch: BRANCH
   });
-  const url = "https://lslq6.github.io/doraemon-blog/" + path;
+  const url = "https://qixiaoyuang.github.io/qixiaoyuanboke/" + path;
   const arr = imgArr();
   arr.push(url);
   imgStatus().textContent = "上传成功 ✅（" + arr.length + "/" + MAX_IMGS + "）";
@@ -731,7 +731,7 @@ function blobToBase64(blob) {
   });
 }
 function repoImgPath(u) {
-  const prefix = "https://lslq6.github.io/doraemon-blog/";
+  const prefix = "https://qixiaoyuang.github.io/qixiaoyuanboke/";
   if (u && u.indexOf(prefix + "images/products/") === 0) return u.slice(prefix.length);
   return null;
 }
@@ -913,7 +913,7 @@ async function loadSbOrders(){
     }catch(e){}
     let ptypeMap = {};
     try{
-      const pr = await fetch("https://lslq6.github.io/doraemon-blog/products.json").then(x => x.json());
+      const pr = await fetch("https://qixiaoyuang.github.io/qixiaoyuanboke/products.json").then(x => x.json());
       (pr || []).forEach(x => { ptypeMap[x.id] = x.ptype === "physical" ? "physical" : "virtual"; });
     }catch(e){}
     const list = (r.data || []).map(o => ({
@@ -1181,7 +1181,7 @@ async function fireShipEmail(o, ship){
   const token = $("token").value.trim();
   if(!token) return;
   try{
-    await fetch("https://api.github.com/repos/LSLQ6/doraemon-blog/dispatches", {
+    await fetch("https://api.github.com/repos/qixiaoyuang/qixiaoyuanboke/dispatches", {
       method: "POST",
       headers: { "Authorization": "Bearer " + token, "Accept": "application/vnd.github+json", "Content-Type": "application/json" },
       body: JSON.stringify({ event_type: "ship-virtual", client_payload: {
