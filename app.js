@@ -73,7 +73,7 @@ function inlineMd(s) {
   s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, '<img src="$2" alt="$1" loading="lazy" style="max-width:100%;height:auto;border-radius:8px;display:block;margin:10px auto;">');
   s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
   /* 裸链接自动变成可点击 */
-  s = s.replace(/(^|[\s(>])(https?:\/\/[^\s<>"')\]]+)/g, function(m, pre, url){
+  s = s.replace(/(^|[^\w/:="'%-])(https?:\/\/[^\s<>"')\]]+)/g, function(m, pre, url){
     let trail = "";
     const tm = url.match(/[。、，；：！？!?,;:'"')\].。、]+$/);
     if (tm) { trail = tm[0]; url = url.slice(0, -trail.length); }
