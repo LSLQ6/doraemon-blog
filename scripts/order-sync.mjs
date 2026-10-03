@@ -11,6 +11,41 @@ const NETS = {
   sol:    { label: "Solana", kind: "solana", rpc: "https://api.mainnet-beta.solana.com", token: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB", dec: 6, seller: "4ubaQ8zwDZcxSeAJPQbuqAVhcspkyPumRQnRDePnshos" },
   tron:   { label: "Tron", kind: "evm", rpc: "https://api.trongrid.io/jsonrpc", token: "0xa614f803b6fd780986a42c78ec9c7f77e6ded13c", dec: 6, blockTime: 3, chunk: 2000, seller: "TB3CqRHMjTY1fNt1GzmJeUg4Y4owTfjm4j", topicAddr: "0x0000000000000000000000000bb9a6a111889e72315516b0a5074c314ee3b87f" }
 };
+// ===== 收款配置：payment.json 可覆盖收款地址/启停/新增网络 =====
+function tronToHex(b58) {
+  const ALPH = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+  let bytes = [0];
+  for (let i = 0; i < b58.length; i++) {
+    const v = ALPH.indexOf(b58[i]); if (v < 0) return null;
+    let carry = v;
+    for (let j = 0; j < bytes.length; j++) { const x = bytes[j] * 58 + carry; bytes[j] = x & 255; carry = x >> 8; }
+    while (carry > 0) { bytes.push(carry & 255); carry >>= 8; }
+  }
+  bytes = bytes.reverse();
+  if (bytes.length !== 25 || bytes[0] !== 0x41) return null;
+  return "0x" + bytes.slice(1, 21).map(b => ("0" + b.toString(16)).slice(-2)).join("");
+}
+try {
+  const cfg = JSON.parse(readFileSync("payment.json", "utf8"));
+  if (cfg && cfg.chains) {
+    for (const id of Object.keys(cfg.chains)) {
+      const c = cfg.chains[id] || {};
+      if (NETS[id]) {
+        if (c.seller) NETS[id].seller = c.seller;
+        NETS[id].enabled = (c.enabled !== false);
+        if (id === "tron") {
+          const th = tronToHex(NETS[id].seller);
+          if (th) NETS[id].topicAddr = "0x000000000000000000000000" + th.slice(2).toLowerCase();
+        }
+      } else if (c.label && c.seller && c.rpc && c.token && c.enabled !== false) {
+        if ((c.kind || "evm") !== "evm") continue; // 非 EVM 新链暂不支持自动扫描
+        const n = { label: c.label, kind: "evm", rpc: c.rpc, token: c.token, dec: c.dec || 6, blockTime: 3, chunk: 2000, seller: c.seller };
+        if (n.seller.indexOf("0x") === 0) n.topicAddr = toTopic(n.seller);
+        NETS[id] = n;
+      }
+    }
+  }
+} catch (e) { console.log("payment.json 未加载，使用默认收款地址:", e.message); }
 const INIT_DAYS = 3; // 首次运行向前扫描的天数（EVM 链）
 
 async function rpc(url, method, params) {
@@ -188,6 +223,8 @@ async function scanAptos(key, net) {
 }
 
 for (const [key, net] of Object.entries(NETS)) {
+  if (net.enabled === false) { console.log("skip disabled", key); continue; }
+  if (!net.rpc || !net.token) { console.log("skip noauto", key); continue; }
   try {
     if (net.kind === "solana") await scanSolana(key, net);
     else if (net.kind === "aptos") await scanAptos(key, net);
